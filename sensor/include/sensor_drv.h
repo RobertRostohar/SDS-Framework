@@ -14,11 +14,11 @@ extern "C"
 
 // ==== Sensor Driver Interface ====
 
-/// Control block
-typedef struct sensor_t;
+/// Identifier
+typedef void *sensorId_t;
 
 /// Configuration
-typedef const strcut {
+typedef const struct {
   char    *name;                            ///< Sensor name
   uint32_t sample_size;                     ///< Sample size in bytes
   uint32_t sample_interval;                 ///< Sample interval in microseconds
@@ -44,76 +44,76 @@ typedef struct {
 #define SENSOR_EVENT_OVERFLOW   (1UL << 1)  ///< Overflow detected
 
 /// Event callback function
-typedef void (*sensorEvent_t) (sensor_t *handle, uint32_t event);
+typedef void (*sensorEvent_t) (sensorId_t id, uint32_t event);
 
 /**
-  \fn          sensor_t *sensorGetHandle (const char *name)
-  \brief       Get sensor handle.
+  \fn          sensorId_t sensorGetId (const char *name)
+  \brief       Get sensor identifier.
   \param[in]   name        sensor name (pointer to NULL terminated string)
-  \return      pointer to sensor_t
+  \return      \ref sensorId_t
 */
-sensor_t *sensorGetHandle (const char *name);
+sensorId_t sensorGetId (const char *name);
 
 /**
-  \fn          sensorConfig_t *sensorGetConfig (sensor_t *handle)
+  \fn          sensorConfig_t *sensorGetConfig (sensorId_t id)
   \brief       Get sensor configuration.
-  \param[in]   handle      pointer to sensor_t
+  \param[in]   id          \ref sensorId_t
   \return      pointer to \ref sensorConfig_t
 */
-sensorConfig_t *sensorGetConfig (sensor_t *handle);
+sensorConfig_t *sensorGetConfig (sensorId_t id);
 
 /**
-  \fn          int32_t sensorRegisterEvents (sensor_t *handle, sensorEvent_t event_cb, uint32_t event_mask)
+  \fn          int32_t sensorRegisterEvents (sensorId_t id, sensorEvent_t event_cb, uint32_t event_mask)
   \brief       Register sensor events.
-  \param[in]   handle      pointer to sensor_t
+  \param[in]   id          \ref sensorId_t
   \param[in]   event_cb    pointer to \ref sensorEvent_t
   \param[in]   event_mask  event mask
   \return      return code
 */
-int32_t sensorRegisterEvents (sensor_t *handle, sensorEvent_t event_cb, uint32_t event_mask);
+int32_t sensorRegisterEvents (sensorId_t id, sensorEvent_t event_cb, uint32_t event_mask);
 
 /**
-  \fn          int32_t sensorEnable (sensor_t *handle)
+  \fn          int32_t sensorEnable (sensorId_t id)
   \brief       Enable sensor.
-  \param[in]   handle      pointer to sensor_t
+  \param[in]   id          \ref sensorId_t
   \return      return code
 */
-int32_t sensorEnable (sensor_t *handle);
+int32_t sensorEnable (sensorId_t id);
 
 /**
-  \fn          int32_t sensorDisable (sensor_t *handle)
+  \fn          int32_t sensorDisable (sensorId_t id)
   \brief       Disable sensor.
-  \param[in]   handle      pointer to sensor_t
+  \param[in]   id          \ref sensorId_t
   \return      return code
 */
-int32_t sensorDisable (sensor_t *handle);
+int32_t sensorDisable (sensorId_t id);
 
 /**
-  \fn          uint32_t sensorReadSamples (sensor_t *handle, uint32_t num_samples, void *buf, uint32_t buf_size)
+  \fn          uint32_t sensorReadSamples (sensorId_t id, uint32_t num_samples, void *buf, uint32_t buf_size)
   \brief       Read samples from sensor.
-  \param[in]   handle      pointer to sensor_t
+  \param[in]   id          \ref sensorId_t
   \param[in]   num_samples maximum number of samples to read
   \param[out]  buf         pointer to buffer for samples
   \param[in]   buf_size    buffer size in bytes
   \return      number of samples read
 */
-uint32_t sensorReadSamples (sensor_t *handle, uint32_t num_samples, void *buf, uint32_t buf_size);
+uint32_t sensorReadSamples (sensorId_t id, uint32_t num_samples, void *buf, uint32_t buf_size);
 
 /**
-  \fn          sensorStatus_t sensorGetStatus (sensor_t *handle)
+  \fn          sensorStatus_t sensorGetStatus (sensorId_t id)
   \brief       Get sensor status.
-  \param[in]   handle      pointer to sensor_t
+  \param[in]   id          \ref sensorId_t
   \return      \ref sensorStatus_t
 */
-sensorStatus_t sensorGetStatus (sensor_t *handle);
+sensorStatus_t sensorGetStatus (sensorId_t id);
 
 /**
-  \fn          void *sensorGetBlockData (sensor_t *handle)
+  \fn          void *sensorGetBlockData (sensorId_t id)
   \brief       Get block data.
-  \param[in]   handle      pointer to sensor_t
+  \param[in]   id          \ref sensorId_t
   \return      pointer to block data
 */
-void *sensorGetBlockData (sensor_t *handle);
+void *sensorGetBlockData (sensorId_t id);
 
 #ifdef  __cplusplus
 }
