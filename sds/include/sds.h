@@ -15,171 +15,171 @@ extern "C"
 
 // ==== Synchronous Data Stream ====
 
-/// Control block
-typedef struct sds_t;
+/// Identifier
+typedef void *sdsId_t;
 
 /// Events
 #define SDS_EVENT_DATA_LOW      (1UL << 0)  ///< Data bellow threshold
 #define SDS_EVENT_DATA_HIGH     (1UL << 1)  ///< Data above or equal to threshold
 
 /// Event callback function
-typedef void (*sdsEvent_t) (sds_t *handle, uint32_t event, void *arg);
+typedef void (*sdsEvent_t) (sdsId_t id, uint32_t event, void *arg);
 
 /**
-  \fn          sds_t *sdsOpen (void *buf, uint32_t buf_size, uint32_t record_size)
+  \fn          sdsId_t sdsOpen (void *buf, uint32_t buf_size, uint32_t record_size)
   \brief       Open stream.
   \param[in]   buf            pointer to buffer for stream
   \param[in]   buf_size       buffer size in bytes
   \param[in]   threshold_low  data low threshold in bytes
   \param[in]   threshold_high data high threshold in bytes
-  \return      pointer to sds_t
+  \return      \ref sdsId_t
 */
-sds_t *sdsOpen (void *buf, uint32_t buf_size, uint32_t threshold_low, uint32_t threshold_high);
+sdsId_t sdsOpen (void *buf, uint32_t buf_size, uint32_t threshold_low, uint32_t threshold_high);
 
 /**
-  \fn          int32_t sdsClose (sds_t *handle)
+  \fn          int32_t sdsClose (sdsId_t id)
   \brief       Close stream.
-  \param[in]   handle      pointer to sds_t
+  \param[in]   id             \ref sdsId_t
   \return      return code
 */
-int32_t sdsClose (sds_t *handle);
+int32_t sdsClose (sdsId_t id);
 
 /**
-  \fn          int32_t  sdsRegisterEvents (sds_t *handle, sdsEvent_t event_cb, uint32_t event_mask, void *arg)
+  \fn          int32_t  sdsRegisterEvents (sdsId_t id, sdsEvent_t event_cb, uint32_t event_mask, void *arg)
   \brief       Register stream events.
-  \param[in]   handle         pointer to sds_t
+  \param[in]   id             \ref sdsId_t
   \param[in]   event_cb       pointer to \ref sdsEvent_t
   \param[in]   event_mask     event mask
   \param[in]   arg            user argument
   \return      return code
 */
-int32_t sdsRegisterEvents (sds_t *handle, sdsEvent_t event_cb, uint32_t event_mask, void *arg);
+int32_t sdsRegisterEvents (sdsId_t id, sdsEvent_t event_cb, uint32_t event_mask, void *arg);
 
 /**
-  \fn          uint32_t sdsWrite (sds_t *handle, void *buf, uint32_t buf_size)
+  \fn          uint32_t sdsWrite (sdsId_t id, void *buf, uint32_t buf_size)
   \brief       Write data to stream.
-  \param[in]   handle         pointer to sds_t
+  \param[in]   id             \ref sdsId_t
   \param[in]   buf            pointer to buffer with data to write
   \param[in]   buf_size       buffer size in bytes
   \return      number of bytes written
 */
-uint32_t sdsWrite (sds_t *handle, void *buf, uint32_t buf_size);
+uint32_t sdsWrite (sdsId_t id, void *buf, uint32_t buf_size);
 
 /**
-  \fn          uint32_t sdsRead (sds_t *handle, void *buf, uint32_t buf_size)
+  \fn          uint32_t sdsRead (sdsId_t id, void *buf, uint32_t buf_size)
   \brief       Read data from stream.
-  \param[in]   handle         pointer to sds_t
+  \param[in]   id             \ref sdsId_t
   \param[out]  buf            pointer to buffer for data to read
   \param[in]   buf_size       buffer size in bytes
   \return      number of bytes read
 */
-uint32_t sdsRead (sds_t *handle, void *buf, uint32_t buf_size);
+uint32_t sdsRead (sdsId_t id, void *buf, uint32_t buf_size);
 
 /**
-  \fn          uint32_t sdsGetCount (sds_t *handle)
+  \fn          uint32_t sdsGetCount (sdsId_t id)
   \brief       Get data count in stream.
-  \param[in]   handle         pointer to sds_t
+  \param[in]   id             \ref sdsId_t
   \return      number of bytes in stream
 */
-uint32_t sdsGetCount (sds_t *handle);
+uint32_t sdsGetCount (sdsId_t id);
 
 
 // ==== SDS Recorder ====
 
 /// Control block
-typedef struct sdsRec_t;
+typedef void *sdsRecId_t;
 
 /**
-  \fn          int32_t *sdsRecInit (void)
+  \fn          int32_t sdsRecInit (void)
   \brief       Initialize recorder.
   \return      return code
 */
-int32_t *sdsRecInit (void);
+int32_t sdsRecInit (void);
 
 /**
-  \fn          int32_t *sdsRecUninit (void)
+  \fn          int32_t sdsRecUninit (void)
   \brief       Uninitialize recorder.
   \return      return code
 */
-int32_t *sdsRecUninit (void);
+int32_t sdsRecUninit (void);
 
 /**
-  \fn          sdsRec_t *sdsRecOpen (const char *name, void *buf, uint32_t buf_size, uint32_t record_size)
+  \fn          sdsRecId_t sdsRecOpen (const char *name, void *buf, uint32_t buf_size, uint32_t record_size)
   \brief       Open recorder stream.
   \param[in]   name           stream name (pointer to NULL terminated string)
   \param[in]   buf            pointer to buffer for stream
   \param[in]   buf_size       buffer size in bytes
   \param[in]   data_threshold data high threshold size in bytes
-  \return      pointer to sdsRec_t
+  \return      \ref sdsRecId_t
 */
-sdsRec_t *sdsRecOpen (const char *name, void *buf, uint32_t buf_size, uint32_t data_threshold);
+sdsRecId_t sdsRecOpen (const char *name, void *buf, uint32_t buf_size, uint32_t data_threshold);
 
 /**
-  \fn          int32_t sdsRecClose (sdsRec_t *handle)
+  \fn          int32_t sdsRecClose (sdsRecId_t id)
   \brief       Close recorder stream.
-  \param[in]   handle         pointer to sdsRec_t
+  \param[in]   id             \ref sdsRecId_t
   \return      return code
 */
-int32_t sdsRecClose (sdsRec_t *handle);
+int32_t sdsRecClose (sdsRecId_t id);
 
 /**
-  \fn          sdsRecWrite (sdsRec_t *handle, void *buf, uint32_t buf_size)
+  \fn          uint32_t sdsRecWrite (sdsRecId_t id, void *buf, uint32_t buf_size)
   \brief       Write data to recorder stream.
-  \param[in]   handle         pointer to sdsRec_t
+  \param[in]   id             \ref sdsRecId_t
   \param[in]   buf            pointer to buffer with data to write
   \param[in]   buf_size       buffer size in bytes
   \return      number of bytes written
 */
-uint32_t sdsRecWrite (sdsRec_t *handle, void *buf, uint32_t buf_size);
+uint32_t sdsRecWrite (sdsRecId_t id, void *buf, uint32_t buf_size);
 
 
 // ==== SDS Player ====
 
 /// Control block
-typedef struct sdsPlay_t;
+typedef void *sdsPlayId_t;
 
 /**
-  \fn          int32_t *sdsPlayInit (void)
+  \fn          int32_t sdsPlayInit (void)
   \brief       Initialize player.
   \return      return code
 */
-int32_t *sdsPlayInit (void);
+int32_t sdsPlayInit (void);
 
 /**
-  \fn          int32_t *sdsPlayUninit (void)
+  \fn          int32_t sdsPlayUninit (void)
   \brief       Uninitialize player.
   \return      return code
 */
-int32_t *sdsPlayUninit (void);
+int32_t sdsPlayUninit (void);
 
 /**
-  \fn          sdsPlay_t *sdsPlayOpen (const char *name, void *buf, uint32_t buf_size, uint32_t record_size)
+  \fn          sdsPlayId_t sdsPlayOpen (const char *name, void *buf, uint32_t buf_size, uint32_t record_size)
   \brief       Open player stream.
   \param[in]   name           stream name (pointer to NULL terminated string)
   \param[in]   buf            pointer to buffer for stream
   \param[in]   buf_size       buffer size in bytes
   \param[in]   data_threshold data low threshold size in bytes
-  \return      pointer to sdsPlay_t
+  \return      \ref sdsPlayId_t
 */
-sdsPlay_t *sdsPlayOpen (const char *name, void *buf, uint32_t buf_size, uint32_t data_threshold);
+sdsPlayId_t sdsPlayOpen (const char *name, void *buf, uint32_t buf_size, uint32_t data_threshold);
 
 /**
-  \fn          int32_t sdsPlayClose (sdsPlay_t *handle)
+  \fn          int32_t sdsPlayClose (sdsPlayId_t id)
   \brief       Close player stream.
-  \param[in]   handle         pointer to sdsPlay_t
+  \param[in]   id             \ref sdsPlayId_t
   \return      return code
 */
-int32_t sdsPlayClose (sdsPlay_t *handle);
+int32_t sdsPlayClose (sdsPlayId_t id);
 
 /**
-  \fn          sdsPlayRead (sdsPlay_t *handle, void *buf, uint32_t buf_size)
+  \fn          uint32_t sdsPlayRead (sdsPlayId_t id, void *buf, uint32_t buf_size)
   \brief       Write data to Player stream.
-  \param[in]   handle         pointer to sdsPlay_t
+  \param[in]   id             \ref sdsPlayId_t
   \param[out]  buf            pointer to buffer for data to read
   \param[in]   buf_size       buffer size in bytes
   \return      number of bytes read
 */
-uint32_t sdsPlayRead (sdsPlay_t *handle, void *buf, uint32_t buf_size);
+uint32_t sdsPlayRead (sdsPlayId_t id, void *buf, uint32_t buf_size);
 
 
 #ifdef  __cplusplus
@@ -187,4 +187,3 @@ uint32_t sdsPlayRead (sdsPlay_t *handle, void *buf, uint32_t buf_size);
 #endif
 
 #endif  /* SDS_H */
-
