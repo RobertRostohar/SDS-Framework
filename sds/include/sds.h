@@ -18,6 +18,10 @@ extern "C"
 /// Identifier
 typedef void *sdsId_t;
 
+/// Function return codes
+#define SDS_OK                  (0)         ///< Operation completed successfully
+#define SDS_ERROR               (-1)        ///< Operation failed
+
 /// Events
 #define SDS_EVENT_DATA_LOW      (1UL << 0)  ///< Data bellow threshold
 #define SDS_EVENT_DATA_HIGH     (1UL << 1)  ///< Data above or equal to threshold
@@ -86,7 +90,7 @@ uint32_t sdsGetCount (sdsId_t id);
 
 // ==== SDS Recorder ====
 
-/// Control block
+/// Identifier
 typedef void *sdsRecId_t;
 
 /**
@@ -104,7 +108,7 @@ int32_t sdsRecInit (void);
 int32_t sdsRecUninit (void);
 
 /**
-  \fn          sdsRecId_t sdsRecOpen (const char *name, void *buf, uint32_t buf_size, uint32_t record_size)
+  \fn          sdsRecId_t sdsRecOpen (const char *name, void *buf, uint32_t buf_size, uint32_t data_threshold)
   \brief       Open recorder stream.
   \param[in]   name           stream name (pointer to NULL terminated string)
   \param[in]   buf            pointer to buffer for stream
@@ -132,10 +136,20 @@ int32_t sdsRecClose (sdsRecId_t id);
 */
 uint32_t sdsRecWrite (sdsRecId_t id, void *buf, uint32_t buf_size);
 
+/**
+  \fn          uint32_t sdsRecRead (sdsRecId_t id, void *buf, uint32_t buf_size)
+  \brief       Read data from recorder stream.
+  \param[in]   id             \ref sdsRecId_t
+  \param[in]   buf            pointer to buffer for data to read
+  \param[in]   buf_size       buffer size in bytes
+  \return      number of bytes read
+*/
+uint32_t sdsRecRead (sdsRecId_t id, void *buf, uint32_t buf_size);
+
 
 // ==== SDS Player ====
 
-/// Control block
+/// Identifier
 typedef void *sdsPlayId_t;
 
 /**
@@ -153,7 +167,7 @@ int32_t sdsPlayInit (void);
 int32_t sdsPlayUninit (void);
 
 /**
-  \fn          sdsPlayId_t sdsPlayOpen (const char *name, void *buf, uint32_t buf_size, uint32_t record_size)
+  \fn          sdsPlayId_t sdsPlayOpen (const char *name, void *buf, uint32_t buf_size, uint32_t data_threshold)
   \brief       Open player stream.
   \param[in]   name           stream name (pointer to NULL terminated string)
   \param[in]   buf            pointer to buffer for stream
