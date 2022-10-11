@@ -18,6 +18,10 @@ extern "C"
 /// Identifier
 typedef void *sdsId_t;
 
+/// Function return codes
+#define SDS_OK                  (0)         ///< Operation completed successfully
+#define SDS_ERROR               (-1)        ///< Operation failed
+
 /// Events
 #define SDS_EVENT_DATA_LOW      (1UL << 0)  ///< Data bellow threshold
 #define SDS_EVENT_DATA_HIGH     (1UL << 1)  ///< Data above or equal to threshold
