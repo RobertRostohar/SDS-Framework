@@ -86,7 +86,7 @@ uint32_t sdsGetCount (sdsId_t id);
 
 // ==== SDS Recorder ====
 
-/// Control block
+/// Identifier
 typedef void *sdsRecId_t;
 
 /**
@@ -104,7 +104,7 @@ int32_t sdsRecInit (void);
 int32_t sdsRecUninit (void);
 
 /**
-  \fn          sdsRecId_t sdsRecOpen (const char *name, void *buf, uint32_t buf_size, uint32_t record_size)
+  \fn          sdsRecId_t sdsRecOpen (const char *name, void *buf, uint32_t buf_size, uint32_t data_threshold)
   \brief       Open recorder stream.
   \param[in]   name           stream name (pointer to NULL terminated string)
   \param[in]   buf            pointer to buffer for stream
@@ -135,7 +135,7 @@ uint32_t sdsRecWrite (sdsRecId_t id, void *buf, uint32_t buf_size);
 
 // ==== SDS Player ====
 
-/// Control block
+/// Identifier
 typedef void *sdsPlayId_t;
 
 /**
@@ -153,7 +153,7 @@ int32_t sdsPlayInit (void);
 int32_t sdsPlayUninit (void);
 
 /**
-  \fn          sdsPlayId_t sdsPlayOpen (const char *name, void *buf, uint32_t buf_size, uint32_t record_size)
+  \fn          sdsPlayId_t sdsPlayOpen (const char *name, void *buf, uint32_t buf_size, uint32_t data_threshold)
   \brief       Open player stream.
   \param[in]   name           stream name (pointer to NULL terminated string)
   \param[in]   buf            pointer to buffer for stream
