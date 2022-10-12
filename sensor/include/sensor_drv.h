@@ -22,7 +22,7 @@ typedef const struct {
   char    *name;                            ///< Sensor name
   uint32_t sample_size;                     ///< Sample size in bytes
   uint32_t sample_interval;                 ///< Sample interval in microseconds
-  uint32_t data_threshold;                  ///< Data event threshold in bytes
+  uint32_t data_threshold;                  ///< Data event threshold in number of samples
   void    *block_mem;                       ///< Block memory start address
   uint32_t block_size;                      ///< Block size in bytes
   uint32_t block_num;                       ///< Number of blocks
@@ -31,7 +31,7 @@ typedef const struct {
 /// Status
 typedef struct {
   uint32_t active   :  1;                   ///< Active flag: 1=active(enabled), 0=inactive(disabled)
-  uint32_t overflow :  1;                   ///< Oveflow flag (cleared on read)
+  uint32_t overflow :  1;                   ///< Overflow flag (cleared on read)
   uint32_t reserved : 30;
 } sensorStatus_t;
 
