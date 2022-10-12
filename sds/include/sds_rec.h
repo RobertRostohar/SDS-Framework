@@ -22,6 +22,20 @@ typedef void *sdsRecId_t;
 #define SDS_REC_ERROR           (-1)        ///< Operation failed
 
 /**
+  \fn          int32_t sdsRecInit (void)
+  \brief       Initialize recorder.
+  \return      return code
+*/
+int32_t sdsRecInit (void);
+
+/**
+  \fn          int32_t sdsRecUninit (void)
+  \brief       Uninitialize recorder.
+  \return      return code
+*/
+int32_t sdsRecUninit (void);
+
+/**
   \fn          sdsRecId_t sdsRecOpen (const char *name, void *buf, uint32_t buf_size, uint32_t record_size)
   \brief       Open recorder stream.
   \param[in]   name           stream name (pointer to NULL terminated string)

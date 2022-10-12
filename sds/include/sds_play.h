@@ -22,6 +22,20 @@ typedef void *sdsPlayId_t;
 #define SDS_PLAY_ERROR          (-1)        ///< Operation failed
 
 /**
+  \fn          int32_t sdsPlayInit (void)
+  \brief       Initialize player.
+  \return      return code
+*/
+int32_t sdsPlayInit (void);
+
+/**
+  \fn          int32_t sdsPlayUninit (void)
+  \brief       Uninitialize player.
+  \return      return code
+*/
+int32_t sdsPlayUninit (void);
+
+/**
   \fn          sdsPlayId_t sdsPlayOpen (const char *name, void *buf, uint32_t buf_size, uint32_t record_size)
   \brief       Open player stream.
   \param[in]   name           stream name (pointer to NULL terminated string)
