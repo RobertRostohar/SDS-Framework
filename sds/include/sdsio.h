@@ -18,9 +18,9 @@ extern "C"
 typedef void *sdsioId_t;
 
 /// Open Mode
-typdef enum {
-  sdsioRead  = 0,               ///< Open for read (binary)
-  sdsioWrite = 1                ///< Open for write (binary)
+typedef enum {
+  sdsioModeRead  = 0,           ///< Open for read (binary)
+  sdsioModeWrite = 1            ///< Open for write (binary)
 } sdsioMode_t;
 
 /// Function return codes
