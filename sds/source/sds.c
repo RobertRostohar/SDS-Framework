@@ -29,6 +29,8 @@ typedef struct {
 static sds_t   Streams[SDS_MAX_STREAMS] = {0};
 static sds_t *pStreams[SDS_MAX_STREAMS] = {NULL};
 
+// Helper functions
+
 static uint32_t sdsBufSizeValid (uint32_t buf_size) {
   uint32_t ret = 0U;
   uint32_t n;
