@@ -22,9 +22,8 @@ typedef const struct {
   char    *name;                            ///< Sensor name
   uint32_t sample_size;                     ///< Sample size in bytes
   uint32_t sample_interval;                 ///< Sample interval in microseconds
-  uint32_t data_threshold;                  ///< Data event threshold in number of samples
+  uint32_t data_threshold;                  ///< Data event threshold in number of samples/blocks
   uint32_t fifo_size;                       ///< Sample FIFO size in bytes
-  void    *block_mem;                       ///< Block memory start address
   uint32_t block_size;                      ///< Block size in bytes
   uint32_t block_num;                       ///< Number of blocks
 } sensorConfig_t;
@@ -38,11 +37,11 @@ typedef struct {
 
 /// Functions (back-end)
 typedef const struct {
-  int32_t        (*Enable)      (void);
-  int32_t        (*Disable)     (void);
-  uint32_t       (*ReadSamples) (uint32_t num_samples, void *buf, uint32_t buf_size);
-  sensorStatus_t (*GetStatus)   (void);
-  void *         (*GetBlockData)(sensorId_t id);
+  int32_t  (*Enable)      (void);
+  int32_t  (*Disable)     (void);
+  uint32_t (*ReadSamples) (uint32_t num_samples, void *buf);
+  uint32_t (*GetOverflow) (void);
+  void *   (*GetBlockData)(void);
 } sensorFunc_t;
 
 /// Function return codes
