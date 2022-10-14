@@ -48,15 +48,15 @@ sdsId_t sdsOpen (void *buf, uint32_t buf_size, uint32_t threshold_low, uint32_t 
 int32_t sdsClose (sdsId_t id);
 
 /**
-  \fn          int32_t  sdsRegisterEvents (sdsId_t id, sdsEvent_t event_cb, uint32_t event_mask, void *arg)
+  \fn          int32_t  sdsRegisterEvents (sdsId_t id, sdsEvent_t event_cb, uint32_t event_mask, void *event_arg)
   \brief       Register stream events.
   \param[in]   id             \ref sdsId_t
   \param[in]   event_cb       pointer to \ref sdsEvent_t
   \param[in]   event_mask     event mask
-  \param[in]   arg            user argument
+  \param[in]   event_arg      event argument
   \return      return code
 */
-int32_t sdsRegisterEvents (sdsId_t id, sdsEvent_t event_cb, uint32_t event_mask, void *arg);
+int32_t sdsRegisterEvents (sdsId_t id, sdsEvent_t event_cb, uint32_t event_mask, void *event_arg);
 
 /**
   \fn          uint32_t sdsWrite (sdsId_t id, const void *buf, uint32_t buf_size)
