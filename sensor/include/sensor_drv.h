@@ -23,6 +23,7 @@ typedef const struct {
   uint32_t sample_size;                     ///< Sample size in bytes
   uint32_t sample_interval;                 ///< Sample interval in microseconds
   uint32_t data_threshold;                  ///< Data event threshold in number of samples
+  uint32_t fifo_size;                       ///< Sample FIFO size in bytes
   void    *block_mem;                       ///< Block memory start address
   uint32_t block_size;                      ///< Block size in bytes
   uint32_t block_num;                       ///< Number of blocks
