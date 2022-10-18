@@ -33,7 +33,6 @@
 
 // Control block
 typedef struct {
-  uint32_t    idx;
   uint32_t    record_size;
   sdsId_t     stream;
   sdsioId_t   sdsio;
@@ -60,14 +59,16 @@ static osThreadId_t sdsRecThreadId;
 
 // Helper functions
 
-static sdsRec_t * sdsRecAlloc (void) {
+static sdsRec_t * sdsRecAlloc (uint32_t *index) {
   sdsRec_t *rec = NULL;
   uint32_t n;
 
   for (n = 0U; n < SDS_REC_MAX_STREAMS; n++) {
     if (pRecStreams[n] == NULL) {
       rec = &RecStreams[n];
-      rec->idx = n;
+      if (index != NULL) {
+        *index = n;
+      }
       pRecStreams[n] = rec;
       break;
     }
@@ -147,14 +148,15 @@ int32_t sdsRecUninit (void) {
 // Open recorder stream
 sdsRecId_t sdsRecOpen (const char *name, void *buf, uint32_t buf_size, uint32_t record_size) {
   sdsRec_t *rec = NULL;
+  uint32_t index;
 
   if ((name != NULL) && (buf != NULL) && (buf_size != 0U) && (record_size != 0U)) {
-    rec = sdsRecAlloc();
+    rec = sdsRecAlloc(&index);
     if (rec != NULL) {
       rec->record_size = record_size;
       rec->stream = sdsOpen(buf, buf_size, 0U, record_size);
       if (rec->stream != NULL) {
-        sdsRegisterEvents(rec->stream, sdsRecEventCallback, SDS_EVENT_DATA_HIGH, (void *)(1U << rec->idx));
+        sdsRegisterEvents(rec->stream, sdsRecEventCallback, SDS_EVENT_DATA_HIGH, (void *)(1U << index));
       }
       rec->sdsio = sdsioOpen(name, sdsioModeWrite); 
       if ((rec->stream == NULL) || (rec->sdsio == NULL)) {
