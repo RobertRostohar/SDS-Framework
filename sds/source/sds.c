@@ -31,20 +31,6 @@ static sds_t *pStreams[SDS_MAX_STREAMS] = {NULL};
 
 // Helper functions
 
-static uint32_t sdsBufSizeValid (uint32_t buf_size) {
-  uint32_t ret = 0U;
-  uint32_t n;
-  
-  for (n = 0U; n < 32U; n++) {
-    if (buf_size == (buf_size & (1 << n))) {
-      // Buffer size is 2^n
-      ret = 1U;
-      break;
-    }
-  }
-  return ret;
-}
-
 static sds_t *sdsAlloc (void) {
   sds_t *stream = NULL;
   uint32_t n;
@@ -76,7 +62,8 @@ static void sdsFree (sds_t *stream) {
 sdsId_t sdsOpen (void *buf, uint32_t buf_size, uint32_t threshold_low, uint32_t threshold_high) {
   sds_t *stream = NULL;
 
-  if ((buf != NULL) && (sdsBufSizeValid(buf_size) != 0U)) {
+  // Buffer pointer needs to be valid and buffer size needs to be power of 2
+  if ((buf != NULL) && (buf_size != 0U) && ((buf_size & (buf_size - 1U)) == 0U)) {
     stream = sdsAlloc();
     if (stream != NULL) {
       memset(stream, 0, sizeof(sds_t));
@@ -125,7 +112,7 @@ uint32_t sdsWrite (sdsId_t id, const void *buf, uint32_t buf_size) {
   if ((stream != NULL) && (buf != NULL) && (buf_size != 0U)) {
 
     cnt_free = stream->buf_size - (stream->cnt_in - stream->cnt_out);
-    offset = stream->cnt_in & (stream->buf_size - 1);
+    offset = stream->cnt_in & (stream->buf_size - 1U);
 
     if (buf_size < cnt_free) {
       num = buf_size;
@@ -164,7 +151,7 @@ uint32_t sdsRead (sdsId_t id, void *buf, uint32_t buf_size) {
   if ((stream != NULL) && (buf != NULL) && (buf_size != 0U)) {
 
     cnt_used = stream->cnt_in - stream->cnt_out;
-    offset = stream->cnt_out & (stream->buf_size - 1);
+    offset = stream->cnt_out & (stream->buf_size - 1U);
 
     if (buf_size < cnt_used) {
       num = buf_size;
