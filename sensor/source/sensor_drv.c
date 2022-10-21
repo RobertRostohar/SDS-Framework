@@ -111,7 +111,7 @@ static sensorConfig_t SensorConfig7 = {
 // Control block
 typedef struct {
   sensorConfig_t *config;
-  sensorFunc_t   *func;
+  sensorDrvHW_t  *drw_hw;
   sensorStatus_t  status;
   sensorEvent_t   event_cb;
   uint32_t        event_mask;
@@ -119,28 +119,28 @@ typedef struct {
 
 static sensor_t Sensors[8] = {
 #ifdef SENSOR0_NAME
-  { &SensorConfig0, &SensorFunc0, {0U, 0U, 0U}, NULL, 0U },
+  { &SensorConfig0, &SensorDrvHW_0, {0U, 0U, 0U}, NULL, 0U },
 #endif
 #ifdef SENSOR1_NAME
-  { &SensorConfig1, &SensorFunc1, {0U, 0U, 0U}, NULL, 0U },
+  { &SensorConfig1, &SensorDrvHW_1, {0U, 0U, 0U}, NULL, 0U },
 #endif
 #ifdef SENSOR2_NAME
-  { &SensorConfig2, &SensorFunc2, {0U, 0U, 0U}, NULL, 0U },
+  { &SensorConfig2, &SensorDrvHW_2, {0U, 0U, 0U}, NULL, 0U },
 #endif
 #ifdef SENSOR3_NAME
-  { &SensorConfig3, &SensorFunc3, {0U, 0U, 0U}, NULL, 0U },
+  { &SensorConfig3, &SensorDrvHW_3, {0U, 0U, 0U}, NULL, 0U },
 #endif
 #ifdef SENSOR4_NAME
-  { &SensorConfig4, &SensorFunc4, {0U, 0U, 0U}, NULL, 0U },
+  { &SensorConfig4, &SensorDrvHW_4, {0U, 0U, 0U}, NULL, 0U },
 #endif
 #ifdef SENSOR5_NAME
-  { &SensorConfig5, &SensorFunc5, {0U, 0U, 0U}, NULL, 0U },
+  { &SensorConfig5, &SensorDrvHW_5, {0U, 0U, 0U}, NULL, 0U },
 #endif
 #ifdef SENSOR6_NAME
-  { &SensorConfig6, &SensorFunc6, {0U, 0U, 0U}, NULL, 0U },
+  { &SensorConfig6, &SensorDrvHW_6, {0U, 0U, 0U}, NULL, 0U },
 #endif
 #ifdef SENSOR7_NAME
-  { &SensorConfig7, &SensorFunc7, {0U, 0U, 0U}, NULL, 0U },
+  { &SensorConfig7, &SensorDrvHW_7, {0U, 0U, 0U}, NULL, 0U },
 #endif
 };
 
@@ -192,7 +192,7 @@ int32_t sensorEnable (sensorId_t id) {
   int32_t ret = SENSOR_ERROR;
 
   if (sensor != NULL) {
-    if (sensor->func->Enable() == SENSOR_OK) {
+    if (sensor->drw_hw->Enable() == SENSOR_OK) {
       sensor->status.active = 1U;
       ret = SENSOR_OK;
     }
@@ -206,7 +206,7 @@ int32_t sensorDisable (sensorId_t id) {
   int32_t ret = SENSOR_ERROR;
 
   if (sensor != NULL) {
-    if (sensor->func->Disable() == SENSOR_OK) {
+    if (sensor->drw_hw->Disable() == SENSOR_OK) {
       sensor->status.active = 0U;
       ret = SENSOR_OK;
     }
@@ -219,9 +219,10 @@ uint32_t sensorReadSamples (sensorId_t id, uint32_t num_samples, void *buf, uint
   sensor_t *sensor = id;
   uint32_t num = 0U;
 
-  if ((sensor != NULL) && (num_samples != 0U) && (buf != NULL)) {
-    if (buf_size >= (num_samples * sensor->config->sample_size)) {
-      num = sensor->func->ReadSamples(num_samples, buf);
+  if ((sensor != NULL) && (num_samples != 0U) && (buf != NULL) &&
+      (buf_size >= (num_samples * sensor->config->sample_size)) {
+    if (sensor->drw_hw->ReadSamples != NULL) {
+      num = sensor->drw_hw->ReadSamples(num_samples, buf);
     }
   }
   return num;
@@ -234,7 +235,7 @@ sensorStatus_t sensorGetStatus (sensorId_t id) {
 
   if (sensor != NULL) {
     stat.active   = sensor->status.active;
-    stat.overflow = sensor->func->GetOverflow();
+    stat.overflow = sensor->drw_hw->GetOverflow();
   }
   return stat;
 }
@@ -244,8 +245,8 @@ void *sensorGetBlockData (sensorId_t id) {
   sensor_t *sensor = id;
   void *block_data = NULL;
 
-  if ((sensor != NULL) && (sensor->func->GetBlockData != NULL)) {
-    block_data = sensor->func->GetBlockData();
+  if ((sensor != NULL) && (sensor->drw_hw->GetBlockData != NULL)) {
+    block_data = sensor->drw_hw->GetBlockData();
   }
 
   return block_data;

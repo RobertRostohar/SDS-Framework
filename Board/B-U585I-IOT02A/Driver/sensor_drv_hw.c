@@ -51,7 +51,7 @@ static uint32_t tempSensorGetOverflow (void) {
   return 0U;
 }
 
-sensorFunc_t SensorFunc0 = {
+sensorDrvHW_t SensorDrvHW_0 = {
   tempSensorEnable, tempSensorDisable, tempSensorReadSample, tempSensorGetOverflow, NULL
 };
 
@@ -94,7 +94,7 @@ static uint32_t humSensorGetOverflow (void) {
   return 0U;
 }
 
-sensorFunc_t SensorFunc1 = {
+sensorDrvHW_t SensorDrvHW_1 = {
   humSensorEnable, humSensorDisable, humSensorReadSample, humSensorGetOverflow, NULL
 };
 
@@ -138,7 +138,7 @@ static uint32_t pressSensorGetOverflow (void) {
   return 0U;
 }
 
-sensorFunc_t SensorFunc2 = {
+sensorDrvHW_t SensorDrvHW_2 = {
   pressSensorEnable, pressSensorDisable, pressSensorReadSample, pressSensorGetOverflow, NULL
 };
 
@@ -182,7 +182,7 @@ static uint32_t accSensorGetOverflow (void) {
   return 0U;
 }
 
-sensorFunc_t SensorFunc3 = {
+sensorDrvHW_t SensorDrvHW_3 = {
   accSensorEnable, accSensorDisable, accSensorReadSample, accSensorGetOverflow, NULL
 };
 
@@ -226,7 +226,7 @@ static uint32_t gyroSensorGetOverflow (void) {
   return 0U;
 }
 
-sensorFunc_t SensorFunc4 = {
+sensorDrvHW_t SensorDrvHW_4 = {
   gyroSensorEnable, gyroSensorDisable, gyroSensorReadSample, gyroSensorGetOverflow, NULL
 };
 
@@ -271,6 +271,6 @@ static uint32_t magSensorGetOverflow (void) {
   return 0U;
 }
 
-sensorFunc_t SensorFunc5 = {
+sensorDrvHW_t SensorDrvHW_5 = {
   magSensorEnable, magSensorDisable, magSensorReadSample, magSensorGetOverflow, NULL
 };

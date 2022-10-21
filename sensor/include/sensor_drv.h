@@ -35,15 +35,6 @@ typedef struct {
   uint32_t reserved : 30;
 } sensorStatus_t;
 
-/// Functions (back-end)
-typedef const struct {
-  int32_t  (*Enable)      (void);
-  int32_t  (*Disable)     (void);
-  uint32_t (*ReadSamples) (uint32_t num_samples, void *buf);
-  uint32_t (*GetOverflow) (void);
-  void *   (*GetBlockData)(void);
-} sensorFunc_t;
-
 /// Function return codes
 #define SENSOR_OK               (0)         ///< Operation completed successfully
 #define SENSOR_ERROR            (-1)        ///< Operation failed
