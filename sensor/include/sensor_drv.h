@@ -30,8 +30,8 @@ typedef const struct {
 
 /// Status
 typedef struct {
-  uint32_t active   :  1;                   ///< Active flag: 1=active(enabled), 0=inactive(disabled)
-  uint32_t overflow :  1;                   ///< Overflow flag (cleared on read)
+  uint32_t active   :  1;                   ///< Active state: 1=active(enabled), 0=inactive(disabled)
+  uint32_t overflow :  1;                   ///< Overflow flag (cleared on \ref sensorGetStatus)
   uint32_t reserved : 30;
 } sensorStatus_t;
 
@@ -89,6 +89,14 @@ int32_t sensorEnable (sensorId_t id);
 int32_t sensorDisable (sensorId_t id);
 
 /**
+  \fn          sensorStatus_t sensorGetStatus (sensorId_t id)
+  \brief       Get sensor status.
+  \param[in]   id          \ref sensorId_t
+  \return      \ref sensorStatus_t
+*/
+sensorStatus_t sensorGetStatus (sensorId_t id);
+
+/**
   \fn          uint32_t sensorReadSamples (sensorId_t id, uint32_t num_samples, void *buf, uint32_t buf_size)
   \brief       Read samples from sensor.
   \param[in]   id          \ref sensorId_t
@@ -98,14 +106,6 @@ int32_t sensorDisable (sensorId_t id);
   \return      number of samples read
 */
 uint32_t sensorReadSamples (sensorId_t id, uint32_t num_samples, void *buf, uint32_t buf_size);
-
-/**
-  \fn          sensorStatus_t sensorGetStatus (sensorId_t id)
-  \brief       Get sensor status.
-  \param[in]   id          \ref sensorId_t
-  \return      \ref sensorStatus_t
-*/
-sensorStatus_t sensorGetStatus (sensorId_t id);
 
 /**
   \fn          void *sensorGetBlockData (sensorId_t id)

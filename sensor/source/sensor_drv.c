@@ -214,6 +214,18 @@ int32_t sensorDisable (sensorId_t id) {
   return ret;
 }
 
+// Get sensor status
+sensorStatus_t sensorGetStatus (sensorId_t id) {
+  sensor_t *sensor = id;
+  sensorStatus_t stat = {0U, 0U, 0U};
+
+  if (sensor != NULL) {
+    stat.active   = sensor->status.active;
+    stat.overflow = sensor->drw_hw->GetOverflow();
+  }
+  return stat;
+}
+
 // Read samples from sensor
 uint32_t sensorReadSamples (sensorId_t id, uint32_t num_samples, void *buf, uint32_t buf_size) {
   sensor_t *sensor = id;
@@ -226,18 +238,6 @@ uint32_t sensorReadSamples (sensorId_t id, uint32_t num_samples, void *buf, uint
     }
   }
   return num;
-}
-
-// Get sensor status
-sensorStatus_t sensorGetStatus (sensorId_t id) {
-  sensor_t *sensor = id;
-  sensorStatus_t stat = {0U, 0U, 0U};
-
-  if (sensor != NULL) {
-    stat.active   = sensor->status.active;
-    stat.overflow = sensor->drw_hw->GetOverflow();
-  }
-  return stat;
 }
 
 // Get block data
