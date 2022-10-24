@@ -232,7 +232,7 @@ uint32_t sensorReadSamples (sensorId_t id, uint32_t num_samples, void *buf, uint
   uint32_t num = 0U;
 
   if ((sensor != NULL) && (num_samples != 0U) && (buf != NULL) &&
-      (buf_size >= (num_samples * sensor->config->sample_size)) {
+      (buf_size >= (num_samples * sensor->config->sample_size))) {
     if (sensor->drw_hw->ReadSamples != NULL) {
       num = sensor->drw_hw->ReadSamples(num_samples, buf);
     }
