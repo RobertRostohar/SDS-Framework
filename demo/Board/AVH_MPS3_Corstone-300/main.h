@@ -22,6 +22,8 @@
 #include <stdint.h>
 
 /* Prototypes */
-extern void     app_initialize     (void);
+extern void     app_initialize  (void);
+
+extern int32_t  VSI0_Initialize (void);
 
 #endif

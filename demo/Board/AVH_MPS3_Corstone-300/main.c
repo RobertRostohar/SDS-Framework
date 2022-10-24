@@ -34,6 +34,8 @@ int main (void) {
 
   vioInit();                            // Initialize Virtual I/O
 
+  VSI0_Initialize();                    // Initialize VSI0
+
 #if defined(RTE_Compiler_EventRecorder) && \
     (defined(__MICROLIB) || \
     !(defined(RTE_CMSIS_RTOS2_RTX5) || defined(RTE_CMSIS_RTOS2_FreeRTOS)))

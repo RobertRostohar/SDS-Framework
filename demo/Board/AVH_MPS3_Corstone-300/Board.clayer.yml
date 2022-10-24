@@ -30,6 +30,8 @@ layer:
 
   add-paths:
     - .
+    - ./Driver
+    - ../../../sensor/include
 
   defines:
     - CMSIS_VIN
@@ -63,4 +65,6 @@ layer:
         - file: ./main.c
         - file: ./retarget_stdio.c
         - file: ./Driver/vio_V2M-MPS3-SSE-300.c
+        - file: ./Driver/sensor_drv_hw.c
+        - file: ../../../sensor/source/sensor_drv.c
         - file: ./RTE/Device/SSE-300-MPS3/fvp_sse300_mps3_s.sct
