@@ -4,7 +4,7 @@ Synchronous Data Stream transfer interfaces for recording real-world data and
 for replay of captured data in Arm Virtual Hardware (AVH) simulation. 
 Supports development of ML and DSP applications.
 
-The following interfaces are provided:
+The following interfaces are defined:
 - [Synchronous Data Stream using circular buffer](#synchronous-data-stream-using-circular-buffer)
 - [Synchronous Data Stream using Input/Output](#synchronous-data-stream-using-inputoutput)
 - [Synchronous Data Stream Recorder](#synchronous-data-stream-recorder)
@@ -37,7 +37,7 @@ The following reference implementation is provided in [sds.c](source/sds.c). It 
 
 ## Synchronous Data Stream using Input/Output
 
-Stream data is written to an Output device and read from an Input device. Input/Output device
+Stream data is written to an Output device or read from an Input device. Input/Output device
 can be a File System, STDIO, Socket, ...  
 
 The API is defined in [sdsio.h](include/sdsio.h). It features the following functions:
