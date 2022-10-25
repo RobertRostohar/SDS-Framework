@@ -66,7 +66,7 @@ def plotData(all_data, data_desc, freq, title):
         else:
             offset = 0
 
-        d_type = getDataType(list(desc.values())[0])
+        d_type = getDataType(desc["type"])
         if d_type is None:
             sys.exit(1)
 
@@ -81,7 +81,7 @@ def plotData(all_data, data_desc, freq, title):
             scaled_data = [(x + offset) for x in data]
 
         t = np.arange(0, len(data) / freq, 1 / freq)
-        plt.plot(t, scaled_data, label=list(desc.keys())[0])
+        plt.plot(t, scaled_data, label=desc["value"])
 
         if m == 3:
             dim[n] = scaled_data
@@ -98,9 +98,9 @@ def plotData(all_data, data_desc, freq, title):
         ax3d = fig3d.add_subplot(projection="3d")
         ax3d.plot(dim[0], dim[1], dim[2])
         ax3d.set_title(f"{title} - 3D")
-        ax3d.set_xlabel(list(data_desc[0].keys())[0])
-        ax3d.set_ylabel(list(data_desc[1].keys())[0])
-        ax3d.set_zlabel(list(data_desc[2].keys())[0])
+        ax3d.set_xlabel(f"{data_desc[0]['value']} [{data_desc[0]['unit']}]")
+        ax3d.set_ylabel(f"{data_desc[1]['value']} [{data_desc[1]['unit']}]")
+        ax3d.set_zlabel(f"{data_desc[2]['value']} [{data_desc[2]['unit']}]")
 
 # Main function
 def main():
