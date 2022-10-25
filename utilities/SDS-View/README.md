@@ -3,7 +3,7 @@ View SDS data recording, according to the description found in a YAML file. If t
 The tool also supports plotting of multiple recordings at the same time, by listing their paths after the `-s` flag. Note that in this case all recordings will be processed and decoded based on the description in the YAML file listed after the `-y` flag.
 
 ## Limitations
-- Data in recording must all be of the same type (float, uint32, uint16, ...)
+- Data in recording must all be of the same type (float, uint32_t, uint16_t, ...)
 - Only one YAML file can be processed on each script run
 
 ## Set-up and requirements
@@ -45,5 +45,5 @@ python sds-view.py -y path/to/<description_filename>.yml -s path/to/<sds_data_fi
 ```
 #### Example:
 ```
-python sds-view.py -y test/sensorGyro.sds.yml -s test/sensorGyro.sds
+python sds-view.py -y ../test/sensorGyro.sds.yml -s ../test/sensorGyro.sds
 ```
