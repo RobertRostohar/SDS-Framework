@@ -35,7 +35,7 @@ Directory                         | Description
 [Board](./Board)                  | Example implementations for various evaluation boards
 [documentation](./documentation/) | User documentation of the SDS Framework
 [RTE](./RTE)                      | Configuration for the software components
-[schema](./schema)                | Sensor interface for the SDS Framework
+[schema](./schema)                | Schema for SDS File Format
 [sensor](./sensor)                | Sensor interface for the SDS Framework
 [sds](./sds)                      | Interfaces of the SDS Framework for Cortex-M devices
 [utilities](./uitilites)          | Python scripts for processing of SDS binary data files
