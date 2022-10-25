@@ -25,7 +25,7 @@ The following section defines the YAML format of this metadata file. The file `s
 ## Example
 
 This example defines a data stream with the name "sensorX" that contains the values of a gyroscope, temperature sensor, and additional raw data (that are not further described).
-The binary data that are coming form this sensors are stored in data files with the following file format: <file-index>.<sensor-name>.sds. In this example the files names could be:
+The binary data that are coming form this sensors are stored in data files with the following file format: `<file-index>.<sensor-name>.sds`. In this example the files names could be:
 
 ```yml
    file0.sensorX.sds   # capture 0
