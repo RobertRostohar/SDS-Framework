@@ -38,4 +38,4 @@ Directory                         | Description
 [schema](./schema)                | Schema for SDS File Format
 [sensor](./sensor)                | Sensor interface for the SDS Framework
 [sds](./sds)                      | Interfaces of the SDS Framework for Cortex-M devices
-[utilities](./uitilites)          | Python scripts for processing of SDS binary data files
+[utilities](./utilities)          | Python scripts for processing of SDS binary data files
