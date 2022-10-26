@@ -1,6 +1,6 @@
 sds:
     name: Temp
-    description: Temperature with 1Hz samle rate
+    description: Temperature with 1Hz sample rate
     frequency: 1
     content:
     - value: temp
