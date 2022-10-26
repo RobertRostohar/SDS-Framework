@@ -9,7 +9,7 @@ import numpy as np
 import yaml
 
 
-# Select number of bytes to unpack
+# Convert C style data type to Python style
 def getDataType(data_type):
     match data_type:
         case "int16_t":
@@ -51,49 +51,63 @@ def closeFile(file_name):
 
 # Create new figure and plot content
 def plotData(all_data, data_desc, freq, title):
-    n = 0
-    m = len(data_desc)
-    unit = "raw"
     dim = {}
+    desc_n = 0
+    desc_n_max = len(data_desc)
 
+    # Create a new figure for each .sds file
     fig = plt.figure()
     for desc in data_desc:
+        # Extract parameters from description in YAML file
         if "unit" in desc:
             unit = desc["unit"]
+        else:
+            unit = "raw"
+
+        if "scale" in desc:
+            scale = desc["scale"]
+        else:
+            scale = 1
 
         if "offset" in desc:
             offset = desc["offset"]
         else:
             offset = 0
 
-        d_type = getDataType(desc["type"])
-        if d_type is None:
+        if "type" in desc:
+            d_type = getDataType(desc["type"])
+        else:
             sys.exit(1)
 
+        # Calculate number of bytes needed for decoding the data in .sds file
         d_byte = struct.calcsize(d_type)
+        # Devide raw data into a list of data points according to the number of bytes needed for each data point
         tmp_data = [all_data[i:(i + d_byte)] for i in range(0, len(all_data), d_byte)]
-        tmp_data = tmp_data[n::m]
+        # Keep only every n-th data point
+        tmp_data = tmp_data[desc_n::desc_n_max]
+        # Decode retreived data points
         data = struct.unpack(f"{int(len(tmp_data))}{d_type}", b''.join(tmp_data))
+        #  Scale and offset data points
+        scaled_data = [((x * scale) + offset) for x in data]
 
-        if "scale" in desc:
-            scaled_data = [((desc["scale"] * x) + offset) for x in data]
-        else:
-            scaled_data = [(x + offset) for x in data]
-
+        # Generatre timestamps using number of datapoints and sampling frequency
         t = np.arange(0, len(data) / freq, 1 / freq)
         plt.plot(t, scaled_data, label=desc["value"])
 
-        if m == 3:
-            dim[n] = scaled_data
+        # Store data points in a dictionary for later use when there are 3 axes described
+        if desc_n_max == 3:
+            dim[desc_n] = scaled_data
 
-        n += 1
+        # Increment description number
+        desc_n += 1
 
     plt.title(title)
     plt.xlabel("seconds")
     plt.ylabel(unit)
     plt.legend()
 
-    if m == 3:
+    # Create a 3D view when there are 3 axes available
+    if desc_n_max == 3:
         fig3d = plt.figure()
         ax3d = fig3d.add_subplot(projection="3d")
         ax3d.plot(dim[0], dim[1], dim[2])
@@ -130,7 +144,7 @@ def main():
         data[f"{arg}"] = data_file.read()
         closeFile(data_file)
 
-    # Plot
+    # Plot data from .sds file/files
     for d in data:
         plotData(data[d], data_desc, data_freq, data_name)
 
