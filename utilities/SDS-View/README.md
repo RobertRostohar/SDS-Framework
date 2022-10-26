@@ -1,8 +1,9 @@
 # SDS-View
-View time based plot of SDS data recording, according to the description found in YAML file.  
-Time vector [s], used for plotting, will automatically be generated based on the number of data 
-points in a recording and frequency provided in the YAML description. All plots form a single 
-recording will be displayed on the same figure with a shared scale.
+View time based plot of SDS data recording, based on the description found in YAML file. 
+
+Horizontal time scale is derived from the number of data points in a recording and frequency 
+provided in the YAML description. All plots form a single recording will be displayed on the 
+same figure (shared vertical scale).
 
 If there are 3 values described in the YAML file, an additional 3D view will be displayed.  
 The tool also supports plotting of multiple recordings at the same time, by listing their paths 
