@@ -81,16 +81,16 @@ def plotData(all_data, data_desc, freq, title):
 
         # Calculate number of bytes needed for decoding the data in .sds file
         d_byte = struct.calcsize(d_type)
-        # Devide raw data into a list of data points according to the number of bytes needed for each data point
+        # Disunite raw data into a list of data points according to the number of bytes needed for each data point
         tmp_data = [all_data[i:(i + d_byte)] for i in range(0, len(all_data), d_byte)]
         # Keep only every n-th data point
         tmp_data = tmp_data[desc_n::desc_n_max]
-        # Decode retreived data points
+        # Decode retrieved data points
         data = struct.unpack(f"{int(len(tmp_data))}{d_type}", b''.join(tmp_data))
-        #  Scale and offset data points
+        # Scale and offset data points
         scaled_data = [((x * scale) + offset) for x in data]
 
-        # Generatre timestamps using number of datapoints and sampling frequency
+        # Generate timestamps using number of data points and sampling frequency
         t = np.arange(0, len(data) / freq, 1 / freq)
         plt.plot(t, scaled_data, label=desc["value"])
 
