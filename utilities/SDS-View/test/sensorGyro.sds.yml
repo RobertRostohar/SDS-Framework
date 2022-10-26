@@ -1,0 +1,17 @@
+sds:
+  name: Gyro
+  description: Gyroscope with 1kHz sample rate
+  frequency: 1000
+  content:
+  - value: x
+    type: float
+    scale: 0.9
+    unit: dps
+  - value: y
+    type: float
+    scale: 0.9
+    unit: dps
+  - value: z
+    type: float
+    scale: 0.9
+    unit: dps
