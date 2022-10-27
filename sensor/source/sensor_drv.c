@@ -12,7 +12,7 @@
 
 
 #ifdef SENSOR0_NAME
-static sensorConfig_t SensorConfig0 = {
+static sensorConfig_t sensorConfig0 = {
   SENSOR0_NAME,
   SENSOR0_SAMPLE_SIZE,
   SENSOR0_SAMPLE_INTERVAL,
@@ -24,7 +24,7 @@ static sensorConfig_t SensorConfig0 = {
 #endif
 
 #ifdef SENSOR1_NAME
-static sensorConfig_t SensorConfig1 = {
+static sensorConfig_t sensorConfig1 = {
   SENSOR1_NAME,
   SENSOR1_SAMPLE_SIZE,
   SENSOR1_SAMPLE_INTERVAL,
@@ -36,7 +36,7 @@ static sensorConfig_t SensorConfig1 = {
 #endif
 
 #ifdef SENSOR2_NAME
-static sensorConfig_t SensorConfig2 = {
+static sensorConfig_t sensorConfig2 = {
   SENSOR2_NAME,
   SENSOR2_SAMPLE_SIZE,
   SENSOR2_SAMPLE_INTERVAL,
@@ -48,7 +48,7 @@ static sensorConfig_t SensorConfig2 = {
 #endif
 
 #ifdef SENSOR3_NAME
-static sensorConfig_t SensorConfig3 = {
+static sensorConfig_t sensorConfig3 = {
   SENSOR3_NAME,
   SENSOR3_SAMPLE_SIZE,
   SENSOR3_SAMPLE_INTERVAL,
@@ -60,7 +60,7 @@ static sensorConfig_t SensorConfig3 = {
 #endif
 
 #ifdef SENSOR4_NAME
-static sensorConfig_t SensorConfig4 = {
+static sensorConfig_t sensorConfig4 = {
   SENSOR4_NAME,
   SENSOR4_SAMPLE_SIZE,
   SENSOR4_SAMPLE_INTERVAL,
@@ -72,7 +72,7 @@ static sensorConfig_t SensorConfig4 = {
 #endif
 
 #ifdef SENSOR5_NAME
-static sensorConfig_t SensorConfig5 = {
+static sensorConfig_t sensorConfig5 = {
   SENSOR5_NAME,
   SENSOR5_SAMPLE_SIZE,
   SENSOR5_SAMPLE_INTERVAL,
@@ -84,7 +84,7 @@ static sensorConfig_t SensorConfig5 = {
 #endif
 
 #ifdef SENSOR6_NAME
-static sensorConfig_t SensorConfig6 = {
+static sensorConfig_t sensorConfig6 = {
   SENSOR6_NAME,
   SENSOR6_SAMPLE_SIZE,
   SENSOR6_SAMPLE_INTERVAL,
@@ -96,7 +96,7 @@ static sensorConfig_t SensorConfig6 = {
 #endif
 
 #ifdef SENSOR7_NAME
-static sensorConfig_t SensorConfig7 = {
+static sensorConfig_t sensorConfig7 = {
   SENSOR7_NAME,
   SENSOR7_SAMPLE_SIZE,
   SENSOR7_SAMPLE_INTERVAL,
@@ -113,34 +113,32 @@ typedef struct {
   sensorConfig_t *config;
   sensorDrvHW_t  *drw_hw;
   sensorStatus_t  status;
-  sensorEvent_t   event_cb;
-  uint32_t        event_mask;
 } sensor_t;
 
 static sensor_t Sensors[8] = {
 #ifdef SENSOR0_NAME
-  { &SensorConfig0, &SensorDrvHW_0, {0U, 0U, 0U}, NULL, 0U },
+  { &sensorConfig0, &sensorDrvHW_0, {0U, 0U, 0U} },
 #endif
 #ifdef SENSOR1_NAME
-  { &SensorConfig1, &SensorDrvHW_1, {0U, 0U, 0U}, NULL, 0U },
+  { &sensorConfig1, &sensorDrvHW_1, {0U, 0U, 0U} },
 #endif
 #ifdef SENSOR2_NAME
-  { &SensorConfig2, &SensorDrvHW_2, {0U, 0U, 0U}, NULL, 0U },
+  { &sensorConfig2, &sensorDrvHW_2, {0U, 0U, 0U} },
 #endif
 #ifdef SENSOR3_NAME
-  { &SensorConfig3, &SensorDrvHW_3, {0U, 0U, 0U}, NULL, 0U },
+  { &sensorConfig3, &sensorDrvHW_3, {0U, 0U, 0U} },
 #endif
 #ifdef SENSOR4_NAME
-  { &SensorConfig4, &SensorDrvHW_4, {0U, 0U, 0U}, NULL, 0U },
+  { &sensorConfig4, &sensorDrvHW_4, {0U, 0U, 0U} },
 #endif
 #ifdef SENSOR5_NAME
-  { &SensorConfig5, &SensorDrvHW_5, {0U, 0U, 0U}, NULL, 0U },
+  { &sensorConfig5, &sensorDrvHW_5, {0U, 0U, 0U} },
 #endif
 #ifdef SENSOR6_NAME
-  { &SensorConfig6, &SensorDrvHW_6, {0U, 0U, 0U}, NULL, 0U },
+  { &sensorConfig6, &sensorDrvHW_6, {0U, 0U, 0U} },
 #endif
 #ifdef SENSOR7_NAME
-  { &SensorConfig7, &SensorDrvHW_7, {0U, 0U, 0U}, NULL, 0U },
+  { &sensorConfig7, &sensorDrvHW_7, {0U, 0U, 0U} },
 #endif
 };
 
@@ -178,9 +176,9 @@ int32_t sensorRegisterEvents (sensorId_t id, sensorEvent_t event_cb, uint32_t ev
   int32_t ret = SENSOR_ERROR;
 
   if ((sensor != NULL) && (event_cb != NULL) && (event_mask != 0U)) {
-    sensor->event_cb   = event_cb;
-    sensor->event_mask = event_mask;
-    ret = SENSOR_OK;
+    if (sensor->drw_hw->RegisterEvents != NULL) {
+      ret = sensor->drw_hw->RegisterEvents(id, event_cb, event_mask);
+    }
   }
 
   return ret;
@@ -192,9 +190,11 @@ int32_t sensorEnable (sensorId_t id) {
   int32_t ret = SENSOR_ERROR;
 
   if (sensor != NULL) {
-    if (sensor->drw_hw->Enable() == SENSOR_OK) {
-      sensor->status.active = 1U;
-      ret = SENSOR_OK;
+    if (sensor->status.active == 0U) {
+      if (sensor->drw_hw->Enable() == SENSOR_OK) {
+        sensor->status.active = 1U;
+        ret = SENSOR_OK;
+      }
     }
   }
   return ret;
@@ -206,9 +206,11 @@ int32_t sensorDisable (sensorId_t id) {
   int32_t ret = SENSOR_ERROR;
 
   if (sensor != NULL) {
-    if (sensor->drw_hw->Disable() == SENSOR_OK) {
-      sensor->status.active = 0U;
-      ret = SENSOR_OK;
+    if (sensor->status.active == 1U) {
+      if (sensor->drw_hw->Disable() == SENSOR_OK) {
+        sensor->status.active = 0U;
+        ret = SENSOR_OK;
+      }
     }
   }
   return ret;
