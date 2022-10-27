@@ -43,14 +43,14 @@ sds:                   # describes a synchronous data stream
   - value: x           # Value name is 'x'
     type:  uint16_t    # stored using a 16-bit unsigned int
     scale: 0.2         # value is scaled by 0.2
-    unit: G            # base unit of the value
+    unit: dps          # base unit of the value
   - value: y
     type: uint16_t
     scale: 0.2
-    unit: G
+    unit: dps
   - value: z
     type: uint16_t
-    unit: G            # scale 1.0 is default
+    unit: dps          # scale 1.0 is default
   - value: temp
     type: float
     unit: degree Celsius
