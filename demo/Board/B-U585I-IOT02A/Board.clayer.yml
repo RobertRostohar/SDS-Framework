@@ -34,7 +34,7 @@ layer:
   add-paths:
     - .
     - ./Driver
-    - ../../sensor/include
+    - ../../../sensor/include
 
   defines:
     - MX_WIFI_SPI_DMA=0   # Do not use DMA if TZEN=1
@@ -100,4 +100,4 @@ layer:
         - file: ./arduino.c
         - file: ./retarget_stdio.c
         - file: ./Driver/sensor_drv_hw.c
-        - file: ../../sensor/source/sensor_drv.c
+        - file: ../../../sensor/source/sensor_drv.c
