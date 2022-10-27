@@ -13,7 +13,7 @@
 
 // Temperature Sensor
 
-static int32_t tempSensorEnable (void) {
+static int32_t TemperatureSensor_Enable (void) {
   int32_t ret = SENSOR_ERROR;
 
   if (BSP_ENV_SENSOR_Enable(0, ENV_TEMPERATURE) == BSP_ERROR_NONE) {
@@ -22,7 +22,7 @@ static int32_t tempSensorEnable (void) {
   return ret;
 }
 
-static int32_t tempSensorDisable (void) {
+static int32_t TemperatureSensor_Disable (void) {
   int32_t ret = SENSOR_ERROR;
 
   if (BSP_ENV_SENSOR_Disable(0, ENV_TEMPERATURE) == BSP_ERROR_NONE) {
@@ -31,7 +31,11 @@ static int32_t tempSensorDisable (void) {
   return ret;
 }
 
-static uint32_t tempSensorReadSample (uint32_t num_samples, void *buf) {
+static uint32_t TemperatureSensor_GetOverflow (void) {
+  return 0U;
+}
+
+static uint32_t TemperatureSensor_ReadSamples (uint32_t num_samples, void *buf) {
   uint32_t num = 0U;
   int32_t  ret;
   uint8_t  stat;
@@ -47,18 +51,19 @@ static uint32_t tempSensorReadSample (uint32_t num_samples, void *buf) {
   return num;
 }
 
-static uint32_t tempSensorGetOverflow (void) {
-  return 0U;
-}
-
-sensorDrvHW_t SensorDrvHW_0 = {
-  tempSensorEnable, tempSensorDisable, tempSensorReadSample, tempSensorGetOverflow, NULL
+sensorDrvHW_t sensorDrvHW_0 = {
+  NULL,
+  TemperatureSensor_Enable,
+  TemperatureSensor_Disable,
+  TemperatureSensor_GetOverflow,
+  TemperatureSensor_ReadSamples,
+  NULL
 };
 
 
 // Humidity Sensor
 
-static int32_t humSensorEnable (void) {
+static int32_t HumiditySensor_Enable (void) {
   int32_t ret = SENSOR_ERROR;
 
   if (BSP_ENV_SENSOR_Enable(0, ENV_HUMIDITY) == BSP_ERROR_NONE) {
@@ -66,7 +71,8 @@ static int32_t humSensorEnable (void) {
   }
   return ret;
 }
-static int32_t humSensorDisable (void) {
+
+static int32_t HumiditySensor_Disable (void) {
   int32_t ret = SENSOR_ERROR;
 
   if (BSP_ENV_SENSOR_Disable(0, ENV_HUMIDITY) == BSP_ERROR_NONE) {
@@ -74,7 +80,12 @@ static int32_t humSensorDisable (void) {
   }
   return ret;
 }
-static uint32_t humSensorReadSample (uint32_t num_samples, void *buf) {
+
+static uint32_t HumiditySensor_GetOverflow (void) {
+  return 0U;
+}
+
+static uint32_t HumiditySensor_ReadSamples (uint32_t num_samples, void *buf) {
   uint32_t num = 0U;
   int32_t  ret;
   uint8_t  stat;
@@ -90,17 +101,19 @@ static uint32_t humSensorReadSample (uint32_t num_samples, void *buf) {
   return num;
 }
 
-static uint32_t humSensorGetOverflow (void) {
-  return 0U;
-}
-
-sensorDrvHW_t SensorDrvHW_1 = {
-  humSensorEnable, humSensorDisable, humSensorReadSample, humSensorGetOverflow, NULL
+sensorDrvHW_t sensorDrvHW_1 = {
+  NULL,
+  HumiditySensor_Enable,
+  HumiditySensor_Disable,
+  HumiditySensor_GetOverflow,
+  HumiditySensor_ReadSamples,
+  NULL
 };
 
 
 // Pressure Sensor
-static int32_t pressSensorEnable (void) {
+
+static int32_t PressureSensor_Enable (void) {
   int32_t ret = SENSOR_ERROR;
 
   if (BSP_ENV_SENSOR_Enable(1, ENV_PRESSURE) == BSP_ERROR_NONE) {
@@ -109,7 +122,7 @@ static int32_t pressSensorEnable (void) {
   return ret;
 }
 
-static int32_t pressSensorDisable (void) {
+static int32_t PressureSensor_Disable (void) {
   int32_t ret = SENSOR_ERROR;
 
   if (BSP_ENV_SENSOR_Disable(1, ENV_PRESSURE) == BSP_ERROR_NONE) {
@@ -118,7 +131,11 @@ static int32_t pressSensorDisable (void) {
   return ret;
 }
 
-static uint32_t pressSensorReadSample (uint32_t num_samples, void *buf) {
+static uint32_t PressureSensor_GetOverflow (void) {
+  return 0U;
+}
+
+static uint32_t PressureSensor_ReadSamples (uint32_t num_samples, void *buf) {
   uint32_t num = 0U;
   int32_t  ret;
   uint8_t  stat;
@@ -134,17 +151,19 @@ static uint32_t pressSensorReadSample (uint32_t num_samples, void *buf) {
   return num;
 }
 
-static uint32_t pressSensorGetOverflow (void) {
-  return 0U;
-}
-
-sensorDrvHW_t SensorDrvHW_2 = {
-  pressSensorEnable, pressSensorDisable, pressSensorReadSample, pressSensorGetOverflow, NULL
+sensorDrvHW_t sensorDrvHW_2 = {
+  NULL,
+  PressureSensor_Enable,
+  PressureSensor_Disable,
+  PressureSensor_GetOverflow,
+  PressureSensor_ReadSamples,
+  NULL
 };
 
 
 // Accelerometer
-static int32_t accSensorEnable (void) {
+
+static int32_t Accelerometer_Enable (void) {
   int32_t ret = SENSOR_ERROR;
 
   if (BSP_MOTION_SENSOR_Enable(0, MOTION_ACCELERO) == BSP_ERROR_NONE) {
@@ -153,7 +172,7 @@ static int32_t accSensorEnable (void) {
   return ret;
 }
 
-static int32_t accSensorDisable (void) {
+static int32_t Accelerometer_Disable (void) {
   int32_t ret = SENSOR_ERROR;
 
   if (BSP_MOTION_SENSOR_Disable(0, MOTION_ACCELERO) == BSP_ERROR_NONE) {
@@ -162,7 +181,11 @@ static int32_t accSensorDisable (void) {
   return ret;
 }
 
-static uint32_t accSensorReadSample (uint32_t num_samples, void *buf) {
+static uint32_t Accelerometer_GetOverflow (void) {
+  return 0U;
+}
+
+static uint32_t Accelerometer_ReadSamples (uint32_t num_samples, void *buf) {
   uint32_t num = 0U;
   int32_t  ret;
   uint8_t  stat;
@@ -178,17 +201,19 @@ static uint32_t accSensorReadSample (uint32_t num_samples, void *buf) {
   return num;
 }
 
-static uint32_t accSensorGetOverflow (void) {
-  return 0U;
-}
-
-sensorDrvHW_t SensorDrvHW_3 = {
-  accSensorEnable, accSensorDisable, accSensorReadSample, accSensorGetOverflow, NULL
+sensorDrvHW_t sensorDrvHW_3 = {
+  NULL,
+  Accelerometer_Enable,
+  Accelerometer_Disable,
+  Accelerometer_GetOverflow,
+  Accelerometer_ReadSamples,
+  NULL
 };
 
 
 // Gyroscope
-static int32_t gyroSensorEnable (void) {
+
+static int32_t Gyroscope_Enable (void) {
   int32_t ret = SENSOR_ERROR;
 
   if (BSP_MOTION_SENSOR_Enable(0, MOTION_GYRO) == BSP_ERROR_NONE) {
@@ -197,7 +222,7 @@ static int32_t gyroSensorEnable (void) {
   return ret;
 }
 
-static int32_t gyroSensorDisable (void) {
+static int32_t Gyroscope_Disable (void) {
   int32_t ret = SENSOR_ERROR;
 
   if (BSP_MOTION_SENSOR_Disable(0, MOTION_GYRO) == BSP_ERROR_NONE) {
@@ -206,7 +231,11 @@ static int32_t gyroSensorDisable (void) {
   return ret;
 }
 
-static uint32_t gyroSensorReadSample (uint32_t num_samples, void *buf) {
+static uint32_t Gyroscope_GetOverflow (void) {
+  return 0U;
+}
+
+static uint32_t Gyroscope_ReadSamples (uint32_t num_samples, void *buf) {
   uint32_t num = 0U;
   int32_t  ret;
   uint8_t  stat;
@@ -222,18 +251,19 @@ static uint32_t gyroSensorReadSample (uint32_t num_samples, void *buf) {
   return num;
 }
 
-static uint32_t gyroSensorGetOverflow (void) {
-  return 0U;
-}
-
-sensorDrvHW_t SensorDrvHW_4 = {
-  gyroSensorEnable, gyroSensorDisable, gyroSensorReadSample, gyroSensorGetOverflow, NULL
+sensorDrvHW_t sensorDrvHW_4 = {
+  NULL,
+  Gyroscope_Enable,
+  Gyroscope_Disable,
+  Gyroscope_GetOverflow,
+  Gyroscope_ReadSamples,
+  NULL
 };
 
 
 // Magnetometer
 
-static int32_t magSensorEnable (void) {
+static int32_t Magnetometer_Enable (void) {
   int32_t ret = SENSOR_ERROR;
 
   if (BSP_MOTION_SENSOR_Enable(1, MOTION_MAGNETO) == BSP_ERROR_NONE) {
@@ -242,7 +272,7 @@ static int32_t magSensorEnable (void) {
   return ret;
 }
 
-static int32_t magSensorDisable (void) {
+static int32_t Magnetometer_Disable (void) {
   int32_t ret = SENSOR_ERROR;
 
   if (BSP_MOTION_SENSOR_Disable(1, MOTION_MAGNETO) == BSP_ERROR_NONE) {
@@ -251,7 +281,11 @@ static int32_t magSensorDisable (void) {
   return ret;
 }
 
-static uint32_t magSensorReadSample (uint32_t num_samples, void *buf) {
+static uint32_t Magnetometer_GetOverflow (void) {
+  return 0U;
+}
+
+static uint32_t Magnetometer_ReadSamples (uint32_t num_samples, void *buf) {
   uint32_t num = 0U;
   int32_t  ret;
   uint8_t  stat;
@@ -267,10 +301,11 @@ static uint32_t magSensorReadSample (uint32_t num_samples, void *buf) {
   return num;
 }
 
-static uint32_t magSensorGetOverflow (void) {
-  return 0U;
-}
-
-sensorDrvHW_t SensorDrvHW_5 = {
-  magSensorEnable, magSensorDisable, magSensorReadSample, magSensorGetOverflow, NULL
+sensorDrvHW_t sensorDrvHW_5 = {
+  NULL,
+  Magnetometer_Enable,
+  Magnetometer_Disable,
+  Magnetometer_GetOverflow,
+  Magnetometer_ReadSamples,
+  NULL
 };
