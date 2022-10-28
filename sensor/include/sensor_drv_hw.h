@@ -17,7 +17,7 @@ extern "C"
 
 // Function documentation
 /**
-  \fn          int32_t sensorDrvHW_RegisterEvents (sensorEvent_t event_cb, uint32_t event_mask)
+  \fn          int32_t sensorDrvHW_RegisterEvents (sensorId_t id, sensorEvent_t event_cb, uint32_t event_mask)
   \brief       Register sensor events.
   \param[in]   id          \ref sensorId_t
   \param[in]   event_cb    pointer to \ref sensorEvent_t
