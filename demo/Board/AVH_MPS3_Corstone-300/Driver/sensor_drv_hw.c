@@ -151,7 +151,7 @@ static int32_t Enable_0 (void) {
     ARM_VSI0->CONTROL        = CONTROL_ENABLE_Msk;
     ARM_VSI0->Timer.Interval = SENSOR0_SAMPLE_INTERVAL;
     ARM_VSI0->Timer.Control  = ARM_VSI_Timer_Periodic_Msk |
-                             #if (SENSOR0_DATA_THRESHOLD == 1U)
+                             #if (SENSOR0_DATA_THRESHOLD != 0U)
                                ARM_VSI_Timer_Trig_IRQ_Msk |
                              #endif
                                ARM_VSI_Timer_Run_Msk;
