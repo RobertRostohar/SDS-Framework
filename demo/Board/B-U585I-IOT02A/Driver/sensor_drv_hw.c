@@ -39,12 +39,14 @@ static uint32_t TemperatureSensor_ReadSamples (uint32_t num_samples, void *buf) 
   uint32_t num = 0U;
   int32_t  ret;
   uint8_t  stat;
+  float    value;
 
   (void)num_samples;
 
   ret = HTS221_TEMP_Get_DRDY_Status(Env_Sensor_CompObj[0], &stat);
   if ((ret == 0) && (stat != 0U)) {
-    if (BSP_ENV_SENSOR_GetValue(0, ENV_TEMPERATURE, (float *)buf) == BSP_ERROR_NONE) {
+    if (BSP_ENV_SENSOR_GetValue(0, ENV_TEMPERATURE, &value) == BSP_ERROR_NONE) {
+      memcpy(buf, &value, sizeof(float));
       num = 1U;
     }
   }
@@ -89,12 +91,14 @@ static uint32_t HumiditySensor_ReadSamples (uint32_t num_samples, void *buf) {
   uint32_t num = 0U;
   int32_t  ret;
   uint8_t  stat;
+  float    value;
 
   (void)num_samples;
 
   ret = HTS221_HUM_Get_DRDY_Status(Env_Sensor_CompObj[0], &stat);
   if ((ret == 0) && (stat != 0U)) {
-    if (BSP_ENV_SENSOR_GetValue(0, ENV_HUMIDITY, (float *)buf) == BSP_ERROR_NONE) {
+    if (BSP_ENV_SENSOR_GetValue(0, ENV_HUMIDITY, &value) == BSP_ERROR_NONE) {
+      memcpy(buf, &value, sizeof(float));
       num = 1U;
     }
   }
@@ -139,12 +143,14 @@ static uint32_t PressureSensor_ReadSamples (uint32_t num_samples, void *buf) {
   uint32_t num = 0U;
   int32_t  ret;
   uint8_t  stat;
+  float    value;
 
   (void)num_samples;
 
   ret = LPS22HH_PRESS_Get_DRDY_Status(Env_Sensor_CompObj[1], &stat);
   if ((ret == 0) && (stat != 0U)) {
-    if (BSP_ENV_SENSOR_GetValue(1, ENV_PRESSURE, (float *)buf) == BSP_ERROR_NONE) {
+    if (BSP_ENV_SENSOR_GetValue(1, ENV_PRESSURE, &value) == BSP_ERROR_NONE) {
+      memcpy(buf, &value, sizeof(float));
       num = 1U;
     }
   }
@@ -189,12 +195,14 @@ static uint32_t Accelerometer_ReadSamples (uint32_t num_samples, void *buf) {
   uint32_t num = 0U;
   int32_t  ret;
   uint8_t  stat;
+  BSP_MOTION_SENSOR_AxesRaw_t axes;
 
   (void)num_samples;
 
   ret = ISM330DHCX_ACC_Get_DRDY_Status(Motion_Sensor_CompObj[0], &stat);
   if ((ret == 0) && (stat != 0U)) {
-    if (BSP_MOTION_SENSOR_GetAxesRaw(0, MOTION_ACCELERO, (BSP_MOTION_SENSOR_AxesRaw_t *)buf) == BSP_ERROR_NONE) {
+    if (BSP_MOTION_SENSOR_GetAxesRaw(0, MOTION_ACCELERO, &axes) == BSP_ERROR_NONE) {
+      memcpy(buf, &axes, sizeof(BSP_MOTION_SENSOR_AxesRaw_t));
       num = 1U;
     }
   }
@@ -239,12 +247,14 @@ static uint32_t Gyroscope_ReadSamples (uint32_t num_samples, void *buf) {
   uint32_t num = 0U;
   int32_t  ret;
   uint8_t  stat;
+  BSP_MOTION_SENSOR_AxesRaw_t axes;
 
   (void)num_samples;
 
   ret = ISM330DHCX_GYRO_Get_DRDY_Status(Motion_Sensor_CompObj[0], &stat);
   if ((ret == 0) && (stat != 0U)) {
-    if (BSP_MOTION_SENSOR_GetAxesRaw(0, MOTION_GYRO, (BSP_MOTION_SENSOR_AxesRaw_t *)buf) == BSP_ERROR_NONE) {
+    if (BSP_MOTION_SENSOR_GetAxesRaw(0, MOTION_GYRO, &axes) == BSP_ERROR_NONE) {
+      memcpy(buf, &axes, sizeof(BSP_MOTION_SENSOR_AxesRaw_t));
       num = 1U;
     }
   }
@@ -289,12 +299,14 @@ static uint32_t Magnetometer_ReadSamples (uint32_t num_samples, void *buf) {
   uint32_t num = 0U;
   int32_t  ret;
   uint8_t  stat;
+  BSP_MOTION_SENSOR_AxesRaw_t axes;
 
   (void)num_samples;
 
   ret = IIS2MDC_MAG_Get_DRDY_Status(Motion_Sensor_CompObj[1], &stat);
   if ((ret == 0) && (stat != 0U)) {
-    if (BSP_MOTION_SENSOR_GetAxesRaw(1, MOTION_MAGNETO, (BSP_MOTION_SENSOR_AxesRaw_t *)buf) == BSP_ERROR_NONE) {
+    if (BSP_MOTION_SENSOR_GetAxesRaw(1, MOTION_MAGNETO, &axes) == BSP_ERROR_NONE) {
+      memcpy(buf, &axes, sizeof(BSP_MOTION_SENSOR_AxesRaw_t));
       num = 1U;
     }
   }
