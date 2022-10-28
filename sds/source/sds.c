@@ -107,11 +107,12 @@ uint32_t sdsWrite (sdsId_t id, const void *buf, uint32_t buf_size) {
   sds_t *stream = id;
   uint32_t num = 0U;
   uint32_t offset;
-  uint32_t cnt_free, cnt_free_new, cnt_limit;
+  uint32_t cnt_free, cnt_used, cnt_used_new, cnt_limit;
 
   if ((stream != NULL) && (buf != NULL) && (buf_size != 0U)) {
 
-    cnt_free = stream->buf_size - (stream->cnt_in - stream->cnt_out);
+    cnt_used = stream->cnt_in - stream->cnt_out;
+    cnt_free = stream->buf_size - cnt_used;
     offset = stream->cnt_in & (stream->buf_size - 1U);
 
     if (buf_size < cnt_free) {
@@ -132,8 +133,8 @@ uint32_t sdsWrite (sdsId_t id, const void *buf, uint32_t buf_size) {
     stream->cnt_in += num;
 
     if ((stream->event_cb != NULL) && (stream->event_mask & SDS_EVENT_DATA_HIGH)) {
-      cnt_free_new = stream->buf_size - (stream->cnt_in - stream->cnt_out);
-      if ((cnt_free < stream->threshold_high) && (cnt_free_new >= stream->threshold_high)) {
+      cnt_used_new = stream->cnt_in - stream->cnt_out;
+      if ((cnt_used < stream->threshold_high) && (cnt_used_new >= stream->threshold_high)) {
         stream->event_cb(stream, SDS_EVENT_DATA_HIGH, stream->event_arg);
       }
     }
