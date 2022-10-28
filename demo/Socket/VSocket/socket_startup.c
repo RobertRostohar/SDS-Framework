@@ -16,38 +16,8 @@
  * limitations under the License.
  * -------------------------------------------------------------------------- */
 
-#include "main.h"
-#include "cmsis_os2.h"
+#include <stdint.h>
 
-#ifdef RECORDER_ENABLED
-extern int32_t socket_startup (void);
-#endif
-extern void demo (void);
-
-/*---------------------------------------------------------------------------
- * Application main thread
- *---------------------------------------------------------------------------*/
-static void app_main (void *argument) {
-  int32_t status = 0;
-
-  (void)argument;
-
-#ifdef RECORDER_ENABLED
-  status = socket_startup();
-#endif
-
-  if (status == 0) {
-    /* Start Demo */
-    demo();
-  }
-
-  osDelay(osWaitForever);
-  for (;;) {}
-}
-
-/*---------------------------------------------------------------------------
- * Application initialization
- *---------------------------------------------------------------------------*/
-void app_initialize (void) {
-  osThreadNew(app_main, NULL, NULL);
+int32_t socket_startup (void) {
+  return 0;
 }

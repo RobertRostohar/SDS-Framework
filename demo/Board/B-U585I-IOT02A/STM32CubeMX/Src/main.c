@@ -31,6 +31,9 @@
 #endif
 
 #include "WiFi_EMW3080.h"
+
+#include "b_u585i_iot02a_env_sensors.h"
+#include "b_u585i_iot02a_motion_sensors.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -145,6 +148,25 @@ void HAL_GPIO_EXTI_Rising_Callback(uint16_t GPIO_Pin) {
       break;
   }
 }
+
+/**
+  * BSP Sensor Init
+  */
+void BSP_SENSOR_Init (void) {
+  BSP_ENV_SENSOR_Init(0U, ENV_TEMPERATURE);
+  BSP_ENV_SENSOR_Init(0U, ENV_HUMIDITY);
+  BSP_ENV_SENSOR_Init(1U, ENV_PRESSURE);
+//  BSP_MOTION_SENSOR_Init(0U, MOTION_ACCELERO);
+//  BSP_MOTION_SENSOR_Init(0U, MOTION_GYRO);
+//  BSP_MOTION_SENSOR_Init(1U, MOTION_MAGNETO);
+  BSP_ENV_SENSOR_Disable(0U, ENV_TEMPERATURE);
+  BSP_ENV_SENSOR_Disable(0U, ENV_HUMIDITY);
+  BSP_ENV_SENSOR_Disable(1U, ENV_PRESSURE);
+  BSP_MOTION_SENSOR_Disable(0U, MOTION_ACCELERO);
+  BSP_MOTION_SENSOR_Disable(0U, MOTION_GYRO);
+  BSP_MOTION_SENSOR_Disable(1U, MOTION_MAGNETO);
+}
+
 /* USER CODE END 0 */
 
 /**
@@ -196,6 +218,8 @@ int main(void)
 #ifdef RTE_VIO_BOARD
   vioInit();
 #endif
+
+  BSP_SENSOR_Init();
 
 #if defined(RTE_Compiler_EventRecorder) && \
     (defined(__MICROLIB) || \
