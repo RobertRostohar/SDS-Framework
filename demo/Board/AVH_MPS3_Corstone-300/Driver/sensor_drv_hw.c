@@ -53,15 +53,14 @@
 #ifdef SENSOR0_NAME
 
 // Registered event variables
-static sensorId_t    SensorId;
+static sensorId_t    SensorId_0;
 static sensorEvent_t EventFunc_0 = NULL;
 static uint32_t      EventMask_0 = 0U;
 
 // Block memory
 #if (SENSOR0_BLOCK_NUM != 0U) && (SENSOR0_BLOCK_SIZE != 0U)
 static uint8_t       BlockMem_0[SENSOR0_BLOCK_NUM][SENSOR0_BLOCK_SIZE];
-static uint32_t      BlockCountI_0 = 0U;   // Incoming block count
-static uint32_t      BlockCountO_0 = 0U;   // Outgoing block count
+static uint32_t      BlockCnt_0 = 0U;
 #endif
 
 // VSI interrupt handler
@@ -73,11 +72,9 @@ void ARM_VSI0_Handler (void) {
   ARM_VSI0->IRQ.Clear = event;
   __DSB();
   __ISB();
-#if (SENSOR0_BLOCK_NUM != 0U) && (SENSOR0_BLOCK_SIZE != 0U)
-  BlockCountI_0++;
-#endif
+
   if ((EventFunc_0 != NULL) && ((event & EventMask_0) != 0U)) {
-    EventFunc_0(SensorId, event);
+    EventFunc_0(SensorId_0, event);
   }
 }
 
@@ -136,7 +133,7 @@ int32_t VSI0_Uninitialize (void) {
 // Register sensor events
 static int32_t RegisterEvents_0 (sensorId_t id, sensorEvent_t event_cb, uint32_t event_mask) {
 
-  SensorId    = id;
+  SensorId_0  = id;
   EventFunc_0 = event_cb;
   EventMask_0 = event_mask;
 
@@ -152,19 +149,17 @@ static int32_t Enable_0 (void) {
     ARM_VSI0->DATA_THRESHOLD = SENSOR0_DATA_THRESHOLD;
     ARM_VSI0->FIFO_SIZE      = SENSOR0_FIFO_SIZE;
     ARM_VSI0->CONTROL        = CONTROL_ENABLE_Msk;
-    ARM_VSI0->Timer.Interval = SENSOR0_SAMPLE_INTERVAL * SENSOR0_SAMPLE_SIZE;
+    ARM_VSI0->Timer.Interval = SENSOR0_SAMPLE_INTERVAL;
     ARM_VSI0->Timer.Control  = ARM_VSI_Timer_Periodic_Msk |
-                             #if (SENSOR0_DATA_THRESHOLD == SENSOR0_SAMPLE_SIZE)
+                             #if (SENSOR0_DATA_THRESHOLD == 1U)
                                ARM_VSI_Timer_Trig_IRQ_Msk |
                              #endif
                                ARM_VSI_Timer_Run_Msk;
     ret = SENSOR_OK;
   #elif (SENSOR0_BLOCK_NUM != 0U) && (SENSOR0_BLOCK_SIZE != 0U)
-    ARM_VSI0->DATA_THRESHOLD = SENSOR0_DATA_THRESHOLD;
     ARM_VSI0->CONTROL        = CONTROL_ENABLE_Msk |
                                CONTROL_DMA_Msk;
-    BlockCountI_0            = 0U;
-    BlockCountO_0            = 0U;
+    BlockCnt_0               = 0U;
     ARM_VSI0->DMA.Address    = (uint32_t)BlockMem_0;
     ARM_VSI0->DMA.BlockNum   = SENSOR0_BLOCK_NUM;
     ARM_VSI0->DMA.BlockSize  = SENSOR0_BLOCK_SIZE;
@@ -174,9 +169,7 @@ static int32_t Enable_0 (void) {
                               (SENSOR0_BLOCK_SIZE / SENSOR0_SAMPLE_SIZE);
     ARM_VSI0->Timer.Control  = ARM_VSI_Timer_Periodic_Msk |
                                ARM_VSI_Timer_Trig_DMA_Msk |
-                             #if (SENSOR0_DATA_THRESHOLD == 1U)
                                ARM_VSI_Timer_Trig_IRQ_Msk |
-                             #endif
                                ARM_VSI_Timer_Run_Msk;
     ret = SENSOR_OK;
   #endif
@@ -232,16 +225,16 @@ static uint32_t ReadSamples (uint32_t num_samples, void *buf) {
 static void * GetBlockData_0 (void) {
   void *p = NULL;
 
-  if (BlockCountI_0 > BlockCountO_0) {
-    p = &BlockMem_0[BlockCountO_0][0];
-    BlockCountO_0++;
+  if (ARM_VSI0->Timer.Count > BlockCnt_0) {
+    p = &BlockMem_0[BlockCnt_0 & (SENSOR0_BLOCK_SIZE - 1U)][0];
+    BlockCnt_0++;
   }
 
   return p;
 }
 #endif
 
-// Exported sensor fucntions
+// Exported sensor functions
 sensorDrvHW_t sensorDrvHW_0 = {
   RegisterEvents_0,
   Enable_0,
