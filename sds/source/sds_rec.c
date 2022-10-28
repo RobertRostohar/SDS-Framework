@@ -27,8 +27,8 @@
 #endif
 #endif
 
-#if SDS_REC_MAX_STREAMS > 30
-#error "Maximmum number of SDS Recorder streams is 30!"
+#if SDS_REC_MAX_STREAMS > 31
+#error "Maximmum number of SDS Recorder streams is 31!"
 #endif
 
 // Control block
@@ -53,11 +53,33 @@ static uint8_t *pRecBuf = &RecBuf[SDSIO_HEADER_SIZE];
 // Thread Id
 static osThreadId_t sdsRecThreadId;
 
+// Mutex Lock
+static const osMutexAttr_t MutexLockAtr = {
+  "Mutex_Lock",                         // Mutex name
+  osMutexPrioInherit,                   // attr_bits
+  NULL,                                 // Memory for control block
+  0U                                    // Size for control block
+};
+static osMutexId_t MutexLockId;
+
 // Event definitions
-#define SDS_REC_TERMINATE_FLAG      (1UL << 30)
-#define SDS_REC_EVENT_FLAG_MASK     (SDS_REC_TERMINATE_FLAG | ((1UL << SDS_REC_MAX_STREAMS) - 1))
+#define SDS_REC_EVENT_FLAG_MASK  ((1UL << SDS_REC_MAX_STREAMS) - 1)
+
 
 // Helper functions
+
+static inline void sdsRecLockCreate (void) {
+  MutexLockId = osMutexNew(&MutexLockAtr);
+}
+static inline void sdsRecLockDelete (void) {
+  osMutexDelete(MutexLockId);
+}
+static inline void sdsRecLock (void) {
+  osMutexAcquire(MutexLockId, osWaitForever);
+}
+static inline void sdsRecUnLock (void) {
+  osMutexRelease(MutexLockId);
+}
 
 static sdsRec_t * sdsRecAlloc (uint32_t *index) {
   sdsRec_t *rec = NULL;
@@ -99,7 +121,7 @@ static void sdsRecEventCallback (sdsId_t id, uint32_t event, void *arg) {
 }
 
 // Recorder thread
-static void sdsRecThread (void *arg) {
+static __NO_RETURN void sdsRecThread (void *arg) {
   sdsRec_t *rec;
   uint32_t flags, cnt, n;
 
@@ -107,14 +129,12 @@ static void sdsRecThread (void *arg) {
 
   while (1) {
     flags = osThreadFlagsWait(SDS_REC_EVENT_FLAG_MASK, osFlagsWaitAny, osWaitForever);
+    sdsRecLock();
     if ((flags & osFlagsError) == 0U) {
-      if ((flags & SDS_REC_TERMINATE_FLAG) != 0U) {
-        // exit thread
-        break;
-      } else {
-        for (n = 0U; n < SDS_REC_MAX_STREAMS; n++) {
-          if (flags & (1U << n)) {
-            rec = &RecStreams[n];
+      for (n = 0U; n < SDS_REC_MAX_STREAMS; n++) {
+        if (flags & (1U << n)) {
+          rec = pRecStreams[n];
+          if (rec != NULL) {
             while (sdsGetCount(rec->stream) >= rec->record_size) {
               cnt = sdsRead(rec->stream, pRecBuf, rec->record_size);
               sdsioWrite(rec->sdsio, pRecBuf, cnt);
@@ -123,6 +143,7 @@ static void sdsRecThread (void *arg) {
         }
       }
     }
+    sdsRecUnLock();
   }
 }
 
@@ -132,6 +153,9 @@ static void sdsRecThread (void *arg) {
 int32_t sdsRecInit (void) {
   int32_t ret = SDS_REC_ERROR;
 
+  memset(pRecStreams, 0, sizeof(pRecStreams));
+
+  sdsRecLockCreate();
   sdsRecThreadId = osThreadNew(sdsRecThread, NULL, NULL);
   if (sdsRecThreadId != NULL)  {
     ret = SDS_OK;
@@ -141,8 +165,14 @@ int32_t sdsRecInit (void) {
 
 // Uninitialize recorder
 int32_t sdsRecUninit (void) {
-  osThreadFlagsSet(sdsRecThreadId, SDS_REC_TERMINATE_FLAG);
-  return SDS_OK;
+  int32_t ret = SDS_ERROR;
+
+  sdsRecLock();
+  osThreadTerminate(sdsRecThreadId);
+  sdsRecUnLock();
+  sdsRecLockDelete();
+
+  return ret;
 }
 
 // Open recorder stream
@@ -151,6 +181,7 @@ sdsRecId_t sdsRecOpen (const char *name, void *buf, uint32_t buf_size, uint32_t 
   uint32_t index;
 
   if ((name != NULL) && (buf != NULL) && (buf_size != 0U) && (record_size != 0U)) {
+    sdsRecLock();
     rec = sdsRecAlloc(&index);
     if (rec != NULL) {
       rec->record_size = record_size;
@@ -162,14 +193,17 @@ sdsRecId_t sdsRecOpen (const char *name, void *buf, uint32_t buf_size, uint32_t 
       if ((rec->stream == NULL) || (rec->sdsio == NULL)) {
         if (rec->stream != NULL) {
           sdsClose(rec->stream);
+          rec->stream = NULL;
         }
         if (rec->sdsio != NULL) {
           sdsioClose(rec->sdsio);
+          rec->sdsio = NULL;
         }
         sdsRecFree(rec);
         rec = NULL;
       }
     }
+    sdsRecUnLock();
   }
   return rec;
 }
@@ -180,9 +214,12 @@ int32_t sdsRecClose (sdsRecId_t id) {
   int32_t  ret = SDS_ERROR;
 
   if (rec != NULL) {
+    sdsRecLock();
     sdsClose(rec->stream);
     sdsioClose(rec->sdsio);
     sdsRecFree(rec);
+    sdsRecUnLock(); 
+
     ret = SDS_OK;
   }
   return ret;
@@ -194,7 +231,9 @@ uint32_t sdsRecWrite (sdsRecId_t id, const void *buf, uint32_t buf_size) {
   uint32_t num = 0U;
 
   if ((rec != NULL) && (buf != NULL) && (buf_size != 0U)) {
+    sdsRecLock();
     num = sdsWrite(rec->stream, buf, buf_size);
+    sdsRecUnLock();
   }
   return num;
 }
