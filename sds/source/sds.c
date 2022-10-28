@@ -15,15 +15,15 @@
 
 // Control block
 typedef struct {
-  sdsEvent_t event_cb;
-  uint32_t   event_mask;
-  void      *event_arg;
-  uint8_t   *buf;
-  uint32_t   buf_size;
-  uint32_t   threshold_high;
-  uint32_t   threshold_low;
-  uint32_t   cnt_in;
-  uint32_t   cnt_out;
+           sdsEvent_t event_cb;
+           uint32_t   event_mask;
+           void      *event_arg;
+           uint8_t   *buf;
+           uint32_t   buf_size;
+           uint32_t   threshold_high;
+           uint32_t   threshold_low;
+  volatile uint32_t   cnt_in;
+  volatile uint32_t   cnt_out;
 } sds_t;
 
 static sds_t   Streams[SDS_MAX_STREAMS] = {0};
