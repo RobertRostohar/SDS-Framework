@@ -35,7 +35,7 @@
 #define SAMPLE_SIZE             Regs[5] // Sample size in bytes
 #define SAMPLE_COUNT            Regs[6] // Sample data count
 #define SAMPLE_PORT             Regs[7] // Sample data port
-#define DATA_THRESHOLD          Regs[8] // Data event threshold in number of samples/blocks
+#define DATA_THRESHOLD          Regs[8] // Data event threshold in number of samples
 #define FIFO_SIZE               Regs[9] // Sample FIFO size in bytes
 
 // Control register definitions
