@@ -35,13 +35,13 @@
 //#define SENSOR2_BLOCK_NUM       0U
 
 // Accelerometer
-//#define SENSOR3_NAME            "Accelerometer"
-//#define SENSOR3_SAMPLE_SIZE     6U
-//#define SENSOR3_SAMPLE_INTERVAL 9615U
-//#define SENSOR3_DATA_THRESHOLD  0U
-//#define SENSOR3_FIFO_SIZE       6U
-//#define SENSOR3_BLOCK_SIZE      0U
-//#define SENSOR3_BLOCK_NUM       0u
+#define SENSOR3_NAME            "Accelerometer"
+#define SENSOR3_SAMPLE_SIZE     6U
+#define SENSOR3_SAMPLE_INTERVAL 9615U
+#define SENSOR3_DATA_THRESHOLD  0U
+#define SENSOR3_FIFO_SIZE       6U
+#define SENSOR3_BLOCK_SIZE      0U
+#define SENSOR3_BLOCK_NUM       0U
 
 // Gyroscope
 //#define SENSOR4_NAME            "Gyroscope"

@@ -25,5 +25,6 @@
 extern void     app_initialize  (void);
 
 extern int32_t  VSI0_Initialize (void);
+extern int32_t  VSI3_Initialize (void);
 
 #endif
