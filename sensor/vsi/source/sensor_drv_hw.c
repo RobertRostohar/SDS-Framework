@@ -199,7 +199,7 @@ static uint32_t GetOverflow_0 (void) {
 
 // Read samples from sensor
 #if (SENSOR0_FIFO_SIZE != 0U)
-static uint32_t ReadSamples (uint32_t num_samples, void *buf) {
+static uint32_t ReadSamples_0 (uint32_t num_samples, void *buf) {
   uint32_t num;
   uint32_t n, m;
   uint8_t *p;
@@ -241,12 +241,1454 @@ sensorDrvHW_t sensorDrvHW_0 = {
   Disable_0,
   GetOverflow_0,
 #if (SENSOR0_FIFO_SIZE != 0U)
-  ReadSamples,
+  ReadSamples_0,
 #else
   NULL,
 #endif
 #if (SENSOR0_BLOCK_NUM != 0U) && (SENSOR0_BLOCK_SIZE != 0U)
   GetBlockData_0
+#else
+  NULL
+#endif
+};
+
+#endif
+
+
+// Sensor1 using VSI1
+#ifdef SENSOR1_NAME
+
+// Registered event variables
+static sensorId_t    SensorId_1;
+static sensorEvent_t EventFunc_1 = NULL;
+static uint32_t      EventMask_1 = 0U;
+
+// Block memory
+#if (SENSOR1_BLOCK_NUM != 0U) && (SENSOR1_BLOCK_SIZE != 0U)
+static uint8_t       BlockMem_1[SENSOR1_BLOCK_NUM][SENSOR1_BLOCK_SIZE];
+static uint32_t      BlockCnt_1 = 0U;
+#endif
+
+// VSI interrupt handler
+void ARM_VSI1_Handler (void);
+void ARM_VSI1_Handler (void) {
+  uint32_t event;
+
+  event = ARM_VSI1->IRQ.Status;
+  ARM_VSI1->IRQ.Clear = event;
+  __DSB();
+  __ISB();
+
+  if ((EventFunc_1 != NULL) && ((event & EventMask_1) != 0U)) {
+    EventFunc_1(SensorId_1, event);
+  }
+}
+
+// Initialize VSI
+int32_t VSI1_Initialize (void);
+int32_t VSI1_Initialize (void) {
+  uint32_t n;
+  char *p;
+
+  // Register sensor name
+  n = strlen(SENSOR1_NAME);
+  ARM_VSI1->SENSOR_NAME_LEN = n;
+  for (p = SENSOR1_NAME ; n!= 0U; n--) {
+    ARM_VSI1->SENSOR_NAME_CHAR = *p++;
+  }
+  if (ARM_VSI1->SENSOR_NAME_VALID == 0U) {
+    return SENSOR_ERROR;
+  }
+
+  // Initialize VSI peripheral
+  ARM_VSI1->Timer.Control = 0U;
+  ARM_VSI1->DMA.Control   = 0U;
+  ARM_VSI1->IRQ.Clear     = SENSOR_EVENT_DATA | SENSOR_EVENT_OVERFLOW;
+  ARM_VSI1->IRQ.Enable    = SENSOR_EVENT_DATA | SENSOR_EVENT_OVERFLOW;
+  ARM_VSI1->CONTROL       = 0U;
+
+  // Enable peripheral interrupts
+//NVIC_EnableIRQ(ARM_VSI1_IRQn);
+  NVIC->ISER[(((uint32_t)ARM_VSI1_IRQn) >> 5UL)] = (uint32_t)(1UL << (((uint32_t)ARM_VSI1_IRQn) & 0x1FUL));
+  __DSB();
+  __ISB();
+
+  return SENSOR_OK;
+}
+
+// Uninitialize VSI
+int32_t VSI1_Uninitialize (void);
+int32_t VSI1_Uninitialize (void) {
+
+  // Disable peripheral interrupts
+//NVIC_DisableIRQ(ARM_VSI1_IRQn);
+  NVIC->ICER[(((uint32_t)ARM_VSI1_IRQn) >> 5UL)] = (uint32_t)(1UL << (((uint32_t)ARM_VSI1_IRQn) & 0x1FUL));
+  __DSB();
+  __ISB();
+
+  // Uninitialize VSI peripheral
+  ARM_VSI1->Timer.Control = 0U;
+  ARM_VSI1->DMA.Control   = 0U;
+  ARM_VSI1->IRQ.Clear     = SENSOR_EVENT_DATA | SENSOR_EVENT_OVERFLOW;
+  ARM_VSI1->IRQ.Enable    = 0U;
+  ARM_VSI1->CONTROL       = 0U;
+
+  return SENSOR_OK;
+}
+
+// Register sensor events
+static int32_t RegisterEvents_1 (sensorId_t id, sensorEvent_t event_cb, uint32_t event_mask) {
+
+  SensorId_1  = id;
+  EventFunc_1 = event_cb;
+  EventMask_1 = event_mask;
+
+  return SENSOR_OK;
+}
+
+// Enable sensor
+static int32_t Enable_1 (void) {
+  int32_t ret = SENSOR_ERROR;
+
+  #if   (SENSOR1_FIFO_SIZE != 0U)
+    ARM_VSI1->SAMPLE_SIZE    = SENSOR1_SAMPLE_SIZE;
+    ARM_VSI1->DATA_THRESHOLD = SENSOR1_DATA_THRESHOLD;
+    ARM_VSI1->FIFO_SIZE      = SENSOR1_FIFO_SIZE;
+    ARM_VSI1->CONTROL        = CONTROL_ENABLE_Msk;
+    ARM_VSI1->Timer.Interval = SENSOR1_SAMPLE_INTERVAL;
+    ARM_VSI1->Timer.Control  = ARM_VSI_Timer_Periodic_Msk |
+                             #if (SENSOR1_DATA_THRESHOLD != 0U)
+                               ARM_VSI_Timer_Trig_IRQ_Msk |
+                             #endif
+                               ARM_VSI_Timer_Run_Msk;
+    ret = SENSOR_OK;
+  #elif (SENSOR1_BLOCK_NUM != 0U) && (SENSOR1_BLOCK_SIZE != 0U)
+    ARM_VSI1->CONTROL        = CONTROL_ENABLE_Msk |
+                               CONTROL_DMA_Msk;
+    BlockCnt_1               = 0U;
+    ARM_VSI1->DMA.Address    = (uint32_t)BlockMem_1;
+    ARM_VSI1->DMA.BlockNum   = SENSOR1_BLOCK_NUM;
+    ARM_VSI1->DMA.BlockSize  = SENSOR1_BLOCK_SIZE;
+    ARM_VSI1->DMA.Control    = ARM_VSI_DMA_Direction_P2M |
+                               ARM_VSI_DMA_Enable_Msk;
+    ARM_VSI1->Timer.Interval = SENSOR1_SAMPLE_INTERVAL *
+                              (SENSOR1_BLOCK_SIZE / SENSOR1_SAMPLE_SIZE);
+    ARM_VSI1->Timer.Control  = ARM_VSI_Timer_Periodic_Msk |
+                               ARM_VSI_Timer_Trig_DMA_Msk |
+                               ARM_VSI_Timer_Trig_IRQ_Msk |
+                               ARM_VSI_Timer_Run_Msk;
+    ret = SENSOR_OK;
+  #endif
+
+  return ret;
+}
+
+// Disable sensor
+static int32_t Disable_1 (void) {
+
+  #if   (SENSOR1_FIFO_SIZE != 0U)
+    ARM_VSI1->Timer.Control  = 0U;
+    ARM_VSI1->CONTROL        = 0U;
+  #elif (SENSOR1_BLOCK_NUM != 0U) && (SENSOR1_BLOCK_SIZE != 0U)
+    ARM_VSI1->Timer.Control  = 0U;
+    ARM_VSI1->DMA.Control    = 0U;
+    ARM_VSI1->CONTROL        = 0U;
+  #endif
+
+  return SENSOR_OK;
+}
+
+// Get overflow status
+static uint32_t GetOverflow_1 (void) {
+  return (ARM_VSI1->STATUS & STATUS_OVERFLOW_Msk);
+}
+
+// Read samples from sensor
+#if (SENSOR1_FIFO_SIZE != 0U)
+static uint32_t ReadSamples_1 (uint32_t num_samples, void *buf) {
+  uint32_t num;
+  uint32_t n, m;
+  uint8_t *p;
+
+  num = ARM_VSI1->SAMPLE_COUNT;
+  if (num > num_samples) {
+    num = num_samples;
+  }
+
+  p = (uint8_t *)buf;
+  for (n = num; n != 0U; n--) {
+    for (m = SENSOR1_SAMPLE_SIZE; m != 0U; m--) {
+      *p++ = (uint8_t)ARM_VSI1->SAMPLE_PORT;
+    }
+  }
+
+  return num;
+}
+#endif
+
+// Get block data
+#if (SENSOR1_BLOCK_NUM != 0U) && (SENSOR1_BLOCK_SIZE != 0U)
+static void * GetBlockData_1 (void) {
+  void *p = NULL;
+
+  if (ARM_VSI1->Timer.Count > BlockCnt_1) {
+    p = &BlockMem_1[BlockCnt_1 & (SENSOR1_BLOCK_SIZE - 1U)][0];
+    BlockCnt_1++;
+  }
+
+  return p;
+}
+#endif
+
+// Exported sensor functions
+sensorDrvHW_t sensorDrvHW_1 = {
+  RegisterEvents_1,
+  Enable_1,
+  Disable_1,
+  GetOverflow_1,
+#if (SENSOR1_FIFO_SIZE != 0U)
+  ReadSamples_1,
+#else
+  NULL,
+#endif
+#if (SENSOR1_BLOCK_NUM != 0U) && (SENSOR1_BLOCK_SIZE != 0U)
+  GetBlockData_1
+#else
+  NULL
+#endif
+};
+
+#endif
+
+
+// Sensor2 using VSI2
+#ifdef SENSOR2_NAME
+
+// Registered event variables
+static sensorId_t    SensorId_2;
+static sensorEvent_t EventFunc_2 = NULL;
+static uint32_t      EventMask_2 = 0U;
+
+// Block memory
+#if (SENSOR2_BLOCK_NUM != 0U) && (SENSOR2_BLOCK_SIZE != 0U)
+static uint8_t       BlockMem_2[SENSOR2_BLOCK_NUM][SENSOR2_BLOCK_SIZE];
+static uint32_t      BlockCnt_2 = 0U;
+#endif
+
+// VSI interrupt handler
+void ARM_VSI2_Handler (void);
+void ARM_VSI2_Handler (void) {
+  uint32_t event;
+
+  event = ARM_VSI2->IRQ.Status;
+  ARM_VSI2->IRQ.Clear = event;
+  __DSB();
+  __ISB();
+
+  if ((EventFunc_2 != NULL) && ((event & EventMask_2) != 0U)) {
+    EventFunc_2(SensorId_2, event);
+  }
+}
+
+// Initialize VSI
+int32_t VSI2_Initialize (void);
+int32_t VSI2_Initialize (void) {
+  uint32_t n;
+  char *p;
+
+  // Register sensor name
+  n = strlen(SENSOR2_NAME);
+  ARM_VSI2->SENSOR_NAME_LEN = n;
+  for (p = SENSOR2_NAME ; n!= 0U; n--) {
+    ARM_VSI2->SENSOR_NAME_CHAR = *p++;
+  }
+  if (ARM_VSI2->SENSOR_NAME_VALID == 0U) {
+    return SENSOR_ERROR;
+  }
+
+  // Initialize VSI peripheral
+  ARM_VSI2->Timer.Control = 0U;
+  ARM_VSI2->DMA.Control   = 0U;
+  ARM_VSI2->IRQ.Clear     = SENSOR_EVENT_DATA | SENSOR_EVENT_OVERFLOW;
+  ARM_VSI2->IRQ.Enable    = SENSOR_EVENT_DATA | SENSOR_EVENT_OVERFLOW;
+  ARM_VSI2->CONTROL       = 0U;
+
+  // Enable peripheral interrupts
+//NVIC_EnableIRQ(ARM_VSI2_IRQn);
+  NVIC->ISER[(((uint32_t)ARM_VSI2_IRQn) >> 5UL)] = (uint32_t)(1UL << (((uint32_t)ARM_VSI2_IRQn) & 0x1FUL));
+  __DSB();
+  __ISB();
+
+  return SENSOR_OK;
+}
+
+// Uninitialize VSI
+int32_t VSI2_Uninitialize (void);
+int32_t VSI2_Uninitialize (void) {
+
+  // Disable peripheral interrupts
+//NVIC_DisableIRQ(ARM_VSI2_IRQn);
+  NVIC->ICER[(((uint32_t)ARM_VSI2_IRQn) >> 5UL)] = (uint32_t)(1UL << (((uint32_t)ARM_VSI2_IRQn) & 0x1FUL));
+  __DSB();
+  __ISB();
+
+  // Uninitialize VSI peripheral
+  ARM_VSI2->Timer.Control = 0U;
+  ARM_VSI2->DMA.Control   = 0U;
+  ARM_VSI2->IRQ.Clear     = SENSOR_EVENT_DATA | SENSOR_EVENT_OVERFLOW;
+  ARM_VSI2->IRQ.Enable    = 0U;
+  ARM_VSI2->CONTROL       = 0U;
+
+  return SENSOR_OK;
+}
+
+// Register sensor events
+static int32_t RegisterEvents_2 (sensorId_t id, sensorEvent_t event_cb, uint32_t event_mask) {
+
+  SensorId_2  = id;
+  EventFunc_2 = event_cb;
+  EventMask_2 = event_mask;
+
+  return SENSOR_OK;
+}
+
+// Enable sensor
+static int32_t Enable_2 (void) {
+  int32_t ret = SENSOR_ERROR;
+
+  #if   (SENSOR2_FIFO_SIZE != 0U)
+    ARM_VSI2->SAMPLE_SIZE    = SENSOR2_SAMPLE_SIZE;
+    ARM_VSI2->DATA_THRESHOLD = SENSOR2_DATA_THRESHOLD;
+    ARM_VSI2->FIFO_SIZE      = SENSOR2_FIFO_SIZE;
+    ARM_VSI2->CONTROL        = CONTROL_ENABLE_Msk;
+    ARM_VSI2->Timer.Interval = SENSOR2_SAMPLE_INTERVAL;
+    ARM_VSI2->Timer.Control  = ARM_VSI_Timer_Periodic_Msk |
+                             #if (SENSOR2_DATA_THRESHOLD != 0U)
+                               ARM_VSI_Timer_Trig_IRQ_Msk |
+                             #endif
+                               ARM_VSI_Timer_Run_Msk;
+    ret = SENSOR_OK;
+  #elif (SENSOR2_BLOCK_NUM != 0U) && (SENSOR2_BLOCK_SIZE != 0U)
+    ARM_VSI2->CONTROL        = CONTROL_ENABLE_Msk |
+                               CONTROL_DMA_Msk;
+    BlockCnt_2               = 0U;
+    ARM_VSI2->DMA.Address    = (uint32_t)BlockMem_2;
+    ARM_VSI2->DMA.BlockNum   = SENSOR2_BLOCK_NUM;
+    ARM_VSI2->DMA.BlockSize  = SENSOR2_BLOCK_SIZE;
+    ARM_VSI2->DMA.Control    = ARM_VSI_DMA_Direction_P2M |
+                               ARM_VSI_DMA_Enable_Msk;
+    ARM_VSI2->Timer.Interval = SENSOR2_SAMPLE_INTERVAL *
+                              (SENSOR2_BLOCK_SIZE / SENSOR2_SAMPLE_SIZE);
+    ARM_VSI2->Timer.Control  = ARM_VSI_Timer_Periodic_Msk |
+                               ARM_VSI_Timer_Trig_DMA_Msk |
+                               ARM_VSI_Timer_Trig_IRQ_Msk |
+                               ARM_VSI_Timer_Run_Msk;
+    ret = SENSOR_OK;
+  #endif
+
+  return ret;
+}
+
+// Disable sensor
+static int32_t Disable_2 (void) {
+
+  #if   (SENSOR2_FIFO_SIZE != 0U)
+    ARM_VSI2->Timer.Control  = 0U;
+    ARM_VSI2->CONTROL        = 0U;
+  #elif (SENSOR2_BLOCK_NUM != 0U) && (SENSOR2_BLOCK_SIZE != 0U)
+    ARM_VSI2->Timer.Control  = 0U;
+    ARM_VSI2->DMA.Control    = 0U;
+    ARM_VSI2->CONTROL        = 0U;
+  #endif
+
+  return SENSOR_OK;
+}
+
+// Get overflow status
+static uint32_t GetOverflow_2 (void) {
+  return (ARM_VSI2->STATUS & STATUS_OVERFLOW_Msk);
+}
+
+// Read samples from sensor
+#if (SENSOR2_FIFO_SIZE != 0U)
+static uint32_t ReadSamples_2 (uint32_t num_samples, void *buf) {
+  uint32_t num;
+  uint32_t n, m;
+  uint8_t *p;
+
+  num = ARM_VSI2->SAMPLE_COUNT;
+  if (num > num_samples) {
+    num = num_samples;
+  }
+
+  p = (uint8_t *)buf;
+  for (n = num; n != 0U; n--) {
+    for (m = SENSOR2_SAMPLE_SIZE; m != 0U; m--) {
+      *p++ = (uint8_t)ARM_VSI2->SAMPLE_PORT;
+    }
+  }
+
+  return num;
+}
+#endif
+
+// Get block data
+#if (SENSOR2_BLOCK_NUM != 0U) && (SENSOR2_BLOCK_SIZE != 0U)
+static void * GetBlockData_2 (void) {
+  void *p = NULL;
+
+  if (ARM_VSI2->Timer.Count > BlockCnt_2) {
+    p = &BlockMem_2[BlockCnt_2 & (SENSOR2_BLOCK_SIZE - 1U)][0];
+    BlockCnt_2++;
+  }
+
+  return p;
+}
+#endif
+
+// Exported sensor functions
+sensorDrvHW_t sensorDrvHW_2 = {
+  RegisterEvents_2,
+  Enable_2,
+  Disable_2,
+  GetOverflow_2,
+#if (SENSOR2_FIFO_SIZE != 0U)
+  ReadSamples_2,
+#else
+  NULL,
+#endif
+#if (SENSOR2_BLOCK_NUM != 0U) && (SENSOR2_BLOCK_SIZE != 0U)
+  GetBlockData_2
+#else
+  NULL
+#endif
+};
+
+#endif
+
+
+// Sensor3 using VSI3
+#ifdef SENSOR3_NAME
+
+// Registered event variables
+static sensorId_t    SensorId_3;
+static sensorEvent_t EventFunc_3 = NULL;
+static uint32_t      EventMask_3 = 0U;
+
+// Block memory
+#if (SENSOR3_BLOCK_NUM != 0U) && (SENSOR3_BLOCK_SIZE != 0U)
+static uint8_t       BlockMem_3[SENSOR3_BLOCK_NUM][SENSOR3_BLOCK_SIZE];
+static uint32_t      BlockCnt_3 = 0U;
+#endif
+
+// VSI interrupt handler
+void ARM_VSI3_Handler (void);
+void ARM_VSI3_Handler (void) {
+  uint32_t event;
+
+  event = ARM_VSI3->IRQ.Status;
+  ARM_VSI3->IRQ.Clear = event;
+  __DSB();
+  __ISB();
+
+  if ((EventFunc_3 != NULL) && ((event & EventMask_3) != 0U)) {
+    EventFunc_3(SensorId_3, event);
+  }
+}
+
+// Initialize VSI
+int32_t VSI3_Initialize (void);
+int32_t VSI3_Initialize (void) {
+  uint32_t n;
+  char *p;
+
+  // Register sensor name
+  n = strlen(SENSOR3_NAME);
+  ARM_VSI3->SENSOR_NAME_LEN = n;
+  for (p = SENSOR3_NAME ; n!= 0U; n--) {
+    ARM_VSI3->SENSOR_NAME_CHAR = *p++;
+  }
+  if (ARM_VSI3->SENSOR_NAME_VALID == 0U) {
+    return SENSOR_ERROR;
+  }
+
+  // Initialize VSI peripheral
+  ARM_VSI3->Timer.Control = 0U;
+  ARM_VSI3->DMA.Control   = 0U;
+  ARM_VSI3->IRQ.Clear     = SENSOR_EVENT_DATA | SENSOR_EVENT_OVERFLOW;
+  ARM_VSI3->IRQ.Enable    = SENSOR_EVENT_DATA | SENSOR_EVENT_OVERFLOW;
+  ARM_VSI3->CONTROL       = 0U;
+
+  // Enable peripheral interrupts
+//NVIC_EnableIRQ(ARM_VSI3_IRQn);
+  NVIC->ISER[(((uint32_t)ARM_VSI3_IRQn) >> 5UL)] = (uint32_t)(1UL << (((uint32_t)ARM_VSI3_IRQn) & 0x1FUL));
+  __DSB();
+  __ISB();
+
+  return SENSOR_OK;
+}
+
+// Uninitialize VSI
+int32_t VSI3_Uninitialize (void);
+int32_t VSI3_Uninitialize (void) {
+
+  // Disable peripheral interrupts
+//NVIC_DisableIRQ(ARM_VSI3_IRQn);
+  NVIC->ICER[(((uint32_t)ARM_VSI3_IRQn) >> 5UL)] = (uint32_t)(1UL << (((uint32_t)ARM_VSI3_IRQn) & 0x1FUL));
+  __DSB();
+  __ISB();
+
+  // Uninitialize VSI peripheral
+  ARM_VSI3->Timer.Control = 0U;
+  ARM_VSI3->DMA.Control   = 0U;
+  ARM_VSI3->IRQ.Clear     = SENSOR_EVENT_DATA | SENSOR_EVENT_OVERFLOW;
+  ARM_VSI3->IRQ.Enable    = 0U;
+  ARM_VSI3->CONTROL       = 0U;
+
+  return SENSOR_OK;
+}
+
+// Register sensor events
+static int32_t RegisterEvents_3 (sensorId_t id, sensorEvent_t event_cb, uint32_t event_mask) {
+
+  SensorId_3  = id;
+  EventFunc_3 = event_cb;
+  EventMask_3 = event_mask;
+
+  return SENSOR_OK;
+}
+
+// Enable sensor
+static int32_t Enable_3 (void) {
+  int32_t ret = SENSOR_ERROR;
+
+  #if   (SENSOR3_FIFO_SIZE != 0U)
+    ARM_VSI3->SAMPLE_SIZE    = SENSOR3_SAMPLE_SIZE;
+    ARM_VSI3->DATA_THRESHOLD = SENSOR3_DATA_THRESHOLD;
+    ARM_VSI3->FIFO_SIZE      = SENSOR3_FIFO_SIZE;
+    ARM_VSI3->CONTROL        = CONTROL_ENABLE_Msk;
+    ARM_VSI3->Timer.Interval = SENSOR3_SAMPLE_INTERVAL;
+    ARM_VSI3->Timer.Control  = ARM_VSI_Timer_Periodic_Msk |
+                             #if (SENSOR3_DATA_THRESHOLD != 0U)
+                               ARM_VSI_Timer_Trig_IRQ_Msk |
+                             #endif
+                               ARM_VSI_Timer_Run_Msk;
+    ret = SENSOR_OK;
+  #elif (SENSOR3_BLOCK_NUM != 0U) && (SENSOR3_BLOCK_SIZE != 0U)
+    ARM_VSI3->CONTROL        = CONTROL_ENABLE_Msk |
+                               CONTROL_DMA_Msk;
+    BlockCnt_3               = 0U;
+    ARM_VSI3->DMA.Address    = (uint32_t)BlockMem_3;
+    ARM_VSI3->DMA.BlockNum   = SENSOR3_BLOCK_NUM;
+    ARM_VSI3->DMA.BlockSize  = SENSOR3_BLOCK_SIZE;
+    ARM_VSI3->DMA.Control    = ARM_VSI_DMA_Direction_P2M |
+                               ARM_VSI_DMA_Enable_Msk;
+    ARM_VSI3->Timer.Interval = SENSOR3_SAMPLE_INTERVAL *
+                              (SENSOR3_BLOCK_SIZE / SENSOR3_SAMPLE_SIZE);
+    ARM_VSI3->Timer.Control  = ARM_VSI_Timer_Periodic_Msk |
+                               ARM_VSI_Timer_Trig_DMA_Msk |
+                               ARM_VSI_Timer_Trig_IRQ_Msk |
+                               ARM_VSI_Timer_Run_Msk;
+    ret = SENSOR_OK;
+  #endif
+
+  return ret;
+}
+
+// Disable sensor
+static int32_t Disable_3 (void) {
+
+  #if   (SENSOR3_FIFO_SIZE != 0U)
+    ARM_VSI3->Timer.Control  = 0U;
+    ARM_VSI3->CONTROL        = 0U;
+  #elif (SENSOR3_BLOCK_NUM != 0U) && (SENSOR3_BLOCK_SIZE != 0U)
+    ARM_VSI3->Timer.Control  = 0U;
+    ARM_VSI3->DMA.Control    = 0U;
+    ARM_VSI3->CONTROL        = 0U;
+  #endif
+
+  return SENSOR_OK;
+}
+
+// Get overflow status
+static uint32_t GetOverflow_3 (void) {
+  return (ARM_VSI3->STATUS & STATUS_OVERFLOW_Msk);
+}
+
+// Read samples from sensor
+#if (SENSOR3_FIFO_SIZE != 0U)
+static uint32_t ReadSamples_3 (uint32_t num_samples, void *buf) {
+  uint32_t num;
+  uint32_t n, m;
+  uint8_t *p;
+
+  num = ARM_VSI3->SAMPLE_COUNT;
+  if (num > num_samples) {
+    num = num_samples;
+  }
+
+  p = (uint8_t *)buf;
+  for (n = num; n != 0U; n--) {
+    for (m = SENSOR3_SAMPLE_SIZE; m != 0U; m--) {
+      *p++ = (uint8_t)ARM_VSI3->SAMPLE_PORT;
+    }
+  }
+
+  return num;
+}
+#endif
+
+// Get block data
+#if (SENSOR3_BLOCK_NUM != 0U) && (SENSOR3_BLOCK_SIZE != 0U)
+static void * GetBlockData_3 (void) {
+  void *p = NULL;
+
+  if (ARM_VSI3->Timer.Count > BlockCnt_3) {
+    p = &BlockMem_3[BlockCnt_3 & (SENSOR3_BLOCK_SIZE - 1U)][0];
+    BlockCnt_3++;
+  }
+
+  return p;
+}
+#endif
+
+// Exported sensor functions
+sensorDrvHW_t sensorDrvHW_3 = {
+  RegisterEvents_3,
+  Enable_3,
+  Disable_3,
+  GetOverflow_3,
+#if (SENSOR3_FIFO_SIZE != 0U)
+  ReadSamples_3,
+#else
+  NULL,
+#endif
+#if (SENSOR3_BLOCK_NUM != 0U) && (SENSOR3_BLOCK_SIZE != 0U)
+  GetBlockData_3
+#else
+  NULL
+#endif
+};
+
+#endif
+
+
+// Sensor4 using VSI4
+#ifdef SENSOR4_NAME
+
+// Registered event variables
+static sensorId_t    SensorId_4;
+static sensorEvent_t EventFunc_4 = NULL;
+static uint32_t      EventMask_4 = 0U;
+
+// Block memory
+#if (SENSOR4_BLOCK_NUM != 0U) && (SENSOR4_BLOCK_SIZE != 0U)
+static uint8_t       BlockMem_4[SENSOR4_BLOCK_NUM][SENSOR4_BLOCK_SIZE];
+static uint32_t      BlockCnt_4 = 0U;
+#endif
+
+// VSI interrupt handler
+void ARM_VSI4_Handler (void);
+void ARM_VSI4_Handler (void) {
+  uint32_t event;
+
+  event = ARM_VSI4->IRQ.Status;
+  ARM_VSI4->IRQ.Clear = event;
+  __DSB();
+  __ISB();
+
+  if ((EventFunc_4 != NULL) && ((event & EventMask_4) != 0U)) {
+    EventFunc_4(SensorId_4, event);
+  }
+}
+
+// Initialize VSI
+int32_t VSI4_Initialize (void);
+int32_t VSI4_Initialize (void) {
+  uint32_t n;
+  char *p;
+
+  // Register sensor name
+  n = strlen(SENSOR4_NAME);
+  ARM_VSI4->SENSOR_NAME_LEN = n;
+  for (p = SENSOR4_NAME ; n!= 0U; n--) {
+    ARM_VSI4->SENSOR_NAME_CHAR = *p++;
+  }
+  if (ARM_VSI4->SENSOR_NAME_VALID == 0U) {
+    return SENSOR_ERROR;
+  }
+
+  // Initialize VSI peripheral
+  ARM_VSI4->Timer.Control = 0U;
+  ARM_VSI4->DMA.Control   = 0U;
+  ARM_VSI4->IRQ.Clear     = SENSOR_EVENT_DATA | SENSOR_EVENT_OVERFLOW;
+  ARM_VSI4->IRQ.Enable    = SENSOR_EVENT_DATA | SENSOR_EVENT_OVERFLOW;
+  ARM_VSI4->CONTROL       = 0U;
+
+  // Enable peripheral interrupts
+//NVIC_EnableIRQ(ARM_VSI4_IRQn);
+  NVIC->ISER[(((uint32_t)ARM_VSI4_IRQn) >> 5UL)] = (uint32_t)(1UL << (((uint32_t)ARM_VSI4_IRQn) & 0x1FUL));
+  __DSB();
+  __ISB();
+
+  return SENSOR_OK;
+}
+
+// Uninitialize VSI
+int32_t VSI4_Uninitialize (void);
+int32_t VSI4_Uninitialize (void) {
+
+  // Disable peripheral interrupts
+//NVIC_DisableIRQ(ARM_VSI4_IRQn);
+  NVIC->ICER[(((uint32_t)ARM_VSI4_IRQn) >> 5UL)] = (uint32_t)(1UL << (((uint32_t)ARM_VSI4_IRQn) & 0x1FUL));
+  __DSB();
+  __ISB();
+
+  // Uninitialize VSI peripheral
+  ARM_VSI4->Timer.Control = 0U;
+  ARM_VSI4->DMA.Control   = 0U;
+  ARM_VSI4->IRQ.Clear     = SENSOR_EVENT_DATA | SENSOR_EVENT_OVERFLOW;
+  ARM_VSI4->IRQ.Enable    = 0U;
+  ARM_VSI4->CONTROL       = 0U;
+
+  return SENSOR_OK;
+}
+
+// Register sensor events
+static int32_t RegisterEvents_4 (sensorId_t id, sensorEvent_t event_cb, uint32_t event_mask) {
+
+  SensorId_4  = id;
+  EventFunc_4 = event_cb;
+  EventMask_4 = event_mask;
+
+  return SENSOR_OK;
+}
+
+// Enable sensor
+static int32_t Enable_4 (void) {
+  int32_t ret = SENSOR_ERROR;
+
+  #if   (SENSOR4_FIFO_SIZE != 0U)
+    ARM_VSI4->SAMPLE_SIZE    = SENSOR4_SAMPLE_SIZE;
+    ARM_VSI4->DATA_THRESHOLD = SENSOR4_DATA_THRESHOLD;
+    ARM_VSI4->FIFO_SIZE      = SENSOR4_FIFO_SIZE;
+    ARM_VSI4->CONTROL        = CONTROL_ENABLE_Msk;
+    ARM_VSI4->Timer.Interval = SENSOR4_SAMPLE_INTERVAL;
+    ARM_VSI4->Timer.Control  = ARM_VSI_Timer_Periodic_Msk |
+                             #if (SENSOR4_DATA_THRESHOLD != 0U)
+                               ARM_VSI_Timer_Trig_IRQ_Msk |
+                             #endif
+                               ARM_VSI_Timer_Run_Msk;
+    ret = SENSOR_OK;
+  #elif (SENSOR4_BLOCK_NUM != 0U) && (SENSOR4_BLOCK_SIZE != 0U)
+    ARM_VSI4->CONTROL        = CONTROL_ENABLE_Msk |
+                               CONTROL_DMA_Msk;
+    BlockCnt_4               = 0U;
+    ARM_VSI4->DMA.Address    = (uint32_t)BlockMem_4;
+    ARM_VSI4->DMA.BlockNum   = SENSOR4_BLOCK_NUM;
+    ARM_VSI4->DMA.BlockSize  = SENSOR4_BLOCK_SIZE;
+    ARM_VSI4->DMA.Control    = ARM_VSI_DMA_Direction_P2M |
+                               ARM_VSI_DMA_Enable_Msk;
+    ARM_VSI4->Timer.Interval = SENSOR4_SAMPLE_INTERVAL *
+                              (SENSOR4_BLOCK_SIZE / SENSOR4_SAMPLE_SIZE);
+    ARM_VSI4->Timer.Control  = ARM_VSI_Timer_Periodic_Msk |
+                               ARM_VSI_Timer_Trig_DMA_Msk |
+                               ARM_VSI_Timer_Trig_IRQ_Msk |
+                               ARM_VSI_Timer_Run_Msk;
+    ret = SENSOR_OK;
+  #endif
+
+  return ret;
+}
+
+// Disable sensor
+static int32_t Disable_4 (void) {
+
+  #if   (SENSOR4_FIFO_SIZE != 0U)
+    ARM_VSI4->Timer.Control  = 0U;
+    ARM_VSI4->CONTROL        = 0U;
+  #elif (SENSOR4_BLOCK_NUM != 0U) && (SENSOR4_BLOCK_SIZE != 0U)
+    ARM_VSI4->Timer.Control  = 0U;
+    ARM_VSI4->DMA.Control    = 0U;
+    ARM_VSI4->CONTROL        = 0U;
+  #endif
+
+  return SENSOR_OK;
+}
+
+// Get overflow status
+static uint32_t GetOverflow_4 (void) {
+  return (ARM_VSI4->STATUS & STATUS_OVERFLOW_Msk);
+}
+
+// Read samples from sensor
+#if (SENSOR4_FIFO_SIZE != 0U)
+static uint32_t ReadSamples_4 (uint32_t num_samples, void *buf) {
+  uint32_t num;
+  uint32_t n, m;
+  uint8_t *p;
+
+  num = ARM_VSI4->SAMPLE_COUNT;
+  if (num > num_samples) {
+    num = num_samples;
+  }
+
+  p = (uint8_t *)buf;
+  for (n = num; n != 0U; n--) {
+    for (m = SENSOR4_SAMPLE_SIZE; m != 0U; m--) {
+      *p++ = (uint8_t)ARM_VSI4->SAMPLE_PORT;
+    }
+  }
+
+  return num;
+}
+#endif
+
+// Get block data
+#if (SENSOR4_BLOCK_NUM != 0U) && (SENSOR4_BLOCK_SIZE != 0U)
+static void * GetBlockData_4 (void) {
+  void *p = NULL;
+
+  if (ARM_VSI4->Timer.Count > BlockCnt_4) {
+    p = &BlockMem_4[BlockCnt_4 & (SENSOR4_BLOCK_SIZE - 1U)][0];
+    BlockCnt_4++;
+  }
+
+  return p;
+}
+#endif
+
+// Exported sensor functions
+sensorDrvHW_t sensorDrvHW_4 = {
+  RegisterEvents_4,
+  Enable_4,
+  Disable_4,
+  GetOverflow_4,
+#if (SENSOR4_FIFO_SIZE != 0U)
+  ReadSamples_4,
+#else
+  NULL,
+#endif
+#if (SENSOR4_BLOCK_NUM != 0U) && (SENSOR4_BLOCK_SIZE != 0U)
+  GetBlockData_4
+#else
+  NULL
+#endif
+};
+
+#endif
+
+
+// Sensor5 using VSI5
+#ifdef SENSOR5_NAME
+
+// Registered event variables
+static sensorId_t    SensorId_5;
+static sensorEvent_t EventFunc_5 = NULL;
+static uint32_t      EventMask_5 = 0U;
+
+// Block memory
+#if (SENSOR5_BLOCK_NUM != 0U) && (SENSOR5_BLOCK_SIZE != 0U)
+static uint8_t       BlockMem_5[SENSOR5_BLOCK_NUM][SENSOR5_BLOCK_SIZE];
+static uint32_t      BlockCnt_5 = 0U;
+#endif
+
+// VSI interrupt handler
+void ARM_VSI5_Handler (void);
+void ARM_VSI5_Handler (void) {
+  uint32_t event;
+
+  event = ARM_VSI5->IRQ.Status;
+  ARM_VSI5->IRQ.Clear = event;
+  __DSB();
+  __ISB();
+
+  if ((EventFunc_5 != NULL) && ((event & EventMask_5) != 0U)) {
+    EventFunc_5(SensorId_5, event);
+  }
+}
+
+// Initialize VSI
+int32_t VSI5_Initialize (void);
+int32_t VSI5_Initialize (void) {
+  uint32_t n;
+  char *p;
+
+  // Register sensor name
+  n = strlen(SENSOR5_NAME);
+  ARM_VSI5->SENSOR_NAME_LEN = n;
+  for (p = SENSOR5_NAME ; n!= 0U; n--) {
+    ARM_VSI5->SENSOR_NAME_CHAR = *p++;
+  }
+  if (ARM_VSI5->SENSOR_NAME_VALID == 0U) {
+    return SENSOR_ERROR;
+  }
+
+  // Initialize VSI peripheral
+  ARM_VSI5->Timer.Control = 0U;
+  ARM_VSI5->DMA.Control   = 0U;
+  ARM_VSI5->IRQ.Clear     = SENSOR_EVENT_DATA | SENSOR_EVENT_OVERFLOW;
+  ARM_VSI5->IRQ.Enable    = SENSOR_EVENT_DATA | SENSOR_EVENT_OVERFLOW;
+  ARM_VSI5->CONTROL       = 0U;
+
+  // Enable peripheral interrupts
+//NVIC_EnableIRQ(ARM_VSI5_IRQn);
+  NVIC->ISER[(((uint32_t)ARM_VSI5_IRQn) >> 5UL)] = (uint32_t)(1UL << (((uint32_t)ARM_VSI5_IRQn) & 0x1FUL));
+  __DSB();
+  __ISB();
+
+  return SENSOR_OK;
+}
+
+// Uninitialize VSI
+int32_t VSI5_Uninitialize (void);
+int32_t VSI5_Uninitialize (void) {
+
+  // Disable peripheral interrupts
+//NVIC_DisableIRQ(ARM_VSI5_IRQn);
+  NVIC->ICER[(((uint32_t)ARM_VSI5_IRQn) >> 5UL)] = (uint32_t)(1UL << (((uint32_t)ARM_VSI5_IRQn) & 0x1FUL));
+  __DSB();
+  __ISB();
+
+  // Uninitialize VSI peripheral
+  ARM_VSI5->Timer.Control = 0U;
+  ARM_VSI5->DMA.Control   = 0U;
+  ARM_VSI5->IRQ.Clear     = SENSOR_EVENT_DATA | SENSOR_EVENT_OVERFLOW;
+  ARM_VSI5->IRQ.Enable    = 0U;
+  ARM_VSI5->CONTROL       = 0U;
+
+  return SENSOR_OK;
+}
+
+// Register sensor events
+static int32_t RegisterEvents_5 (sensorId_t id, sensorEvent_t event_cb, uint32_t event_mask) {
+
+  SensorId_5  = id;
+  EventFunc_5 = event_cb;
+  EventMask_5 = event_mask;
+
+  return SENSOR_OK;
+}
+
+// Enable sensor
+static int32_t Enable_5 (void) {
+  int32_t ret = SENSOR_ERROR;
+
+  #if   (SENSOR5_FIFO_SIZE != 0U)
+    ARM_VSI5->SAMPLE_SIZE    = SENSOR5_SAMPLE_SIZE;
+    ARM_VSI5->DATA_THRESHOLD = SENSOR5_DATA_THRESHOLD;
+    ARM_VSI5->FIFO_SIZE      = SENSOR5_FIFO_SIZE;
+    ARM_VSI5->CONTROL        = CONTROL_ENABLE_Msk;
+    ARM_VSI5->Timer.Interval = SENSOR5_SAMPLE_INTERVAL;
+    ARM_VSI5->Timer.Control  = ARM_VSI_Timer_Periodic_Msk |
+                             #if (SENSOR5_DATA_THRESHOLD != 0U)
+                               ARM_VSI_Timer_Trig_IRQ_Msk |
+                             #endif
+                               ARM_VSI_Timer_Run_Msk;
+    ret = SENSOR_OK;
+  #elif (SENSOR5_BLOCK_NUM != 0U) && (SENSOR5_BLOCK_SIZE != 0U)
+    ARM_VSI5->CONTROL        = CONTROL_ENABLE_Msk |
+                               CONTROL_DMA_Msk;
+    BlockCnt_5               = 0U;
+    ARM_VSI5->DMA.Address    = (uint32_t)BlockMem_5;
+    ARM_VSI5->DMA.BlockNum   = SENSOR5_BLOCK_NUM;
+    ARM_VSI5->DMA.BlockSize  = SENSOR5_BLOCK_SIZE;
+    ARM_VSI5->DMA.Control    = ARM_VSI_DMA_Direction_P2M |
+                               ARM_VSI_DMA_Enable_Msk;
+    ARM_VSI5->Timer.Interval = SENSOR5_SAMPLE_INTERVAL *
+                              (SENSOR5_BLOCK_SIZE / SENSOR5_SAMPLE_SIZE);
+    ARM_VSI5->Timer.Control  = ARM_VSI_Timer_Periodic_Msk |
+                               ARM_VSI_Timer_Trig_DMA_Msk |
+                               ARM_VSI_Timer_Trig_IRQ_Msk |
+                               ARM_VSI_Timer_Run_Msk;
+    ret = SENSOR_OK;
+  #endif
+
+  return ret;
+}
+
+// Disable sensor
+static int32_t Disable_5 (void) {
+
+  #if   (SENSOR5_FIFO_SIZE != 0U)
+    ARM_VSI5->Timer.Control  = 0U;
+    ARM_VSI5->CONTROL        = 0U;
+  #elif (SENSOR5_BLOCK_NUM != 0U) && (SENSOR5_BLOCK_SIZE != 0U)
+    ARM_VSI5->Timer.Control  = 0U;
+    ARM_VSI5->DMA.Control    = 0U;
+    ARM_VSI5->CONTROL        = 0U;
+  #endif
+
+  return SENSOR_OK;
+}
+
+// Get overflow status
+static uint32_t GetOverflow_5 (void) {
+  return (ARM_VSI5->STATUS & STATUS_OVERFLOW_Msk);
+}
+
+// Read samples from sensor
+#if (SENSOR5_FIFO_SIZE != 0U)
+static uint32_t ReadSamples_5 (uint32_t num_samples, void *buf) {
+  uint32_t num;
+  uint32_t n, m;
+  uint8_t *p;
+
+  num = ARM_VSI5->SAMPLE_COUNT;
+  if (num > num_samples) {
+    num = num_samples;
+  }
+
+  p = (uint8_t *)buf;
+  for (n = num; n != 0U; n--) {
+    for (m = SENSOR5_SAMPLE_SIZE; m != 0U; m--) {
+      *p++ = (uint8_t)ARM_VSI5->SAMPLE_PORT;
+    }
+  }
+
+  return num;
+}
+#endif
+
+// Get block data
+#if (SENSOR5_BLOCK_NUM != 0U) && (SENSOR5_BLOCK_SIZE != 0U)
+static void * GetBlockData_5 (void) {
+  void *p = NULL;
+
+  if (ARM_VSI5->Timer.Count > BlockCnt_5) {
+    p = &BlockMem_5[BlockCnt_5 & (SENSOR5_BLOCK_SIZE - 1U)][0];
+    BlockCnt_5++;
+  }
+
+  return p;
+}
+#endif
+
+// Exported sensor functions
+sensorDrvHW_t sensorDrvHW_5 = {
+  RegisterEvents_5,
+  Enable_5,
+  Disable_5,
+  GetOverflow_5,
+#if (SENSOR5_FIFO_SIZE != 0U)
+  ReadSamples_5,
+#else
+  NULL,
+#endif
+#if (SENSOR5_BLOCK_NUM != 0U) && (SENSOR5_BLOCK_SIZE != 0U)
+  GetBlockData_5
+#else
+  NULL
+#endif
+};
+
+#endif
+
+
+// Sensor6 using VSI6
+#ifdef SENSOR6_NAME
+
+// Registered event variables
+static sensorId_t    SensorId_6;
+static sensorEvent_t EventFunc_6 = NULL;
+static uint32_t      EventMask_6 = 0U;
+
+// Block memory
+#if (SENSOR6_BLOCK_NUM != 0U) && (SENSOR6_BLOCK_SIZE != 0U)
+static uint8_t       BlockMem_6[SENSOR6_BLOCK_NUM][SENSOR6_BLOCK_SIZE];
+static uint32_t      BlockCnt_6 = 0U;
+#endif
+
+// VSI interrupt handler
+void ARM_VSI6_Handler (void);
+void ARM_VSI6_Handler (void) {
+  uint32_t event;
+
+  event = ARM_VSI6->IRQ.Status;
+  ARM_VSI6->IRQ.Clear = event;
+  __DSB();
+  __ISB();
+
+  if ((EventFunc_6 != NULL) && ((event & EventMask_6) != 0U)) {
+    EventFunc_6(SensorId_6, event);
+  }
+}
+
+// Initialize VSI
+int32_t VSI6_Initialize (void);
+int32_t VSI6_Initialize (void) {
+  uint32_t n;
+  char *p;
+
+  // Register sensor name
+  n = strlen(SENSOR6_NAME);
+  ARM_VSI6->SENSOR_NAME_LEN = n;
+  for (p = SENSOR6_NAME ; n!= 0U; n--) {
+    ARM_VSI6->SENSOR_NAME_CHAR = *p++;
+  }
+  if (ARM_VSI6->SENSOR_NAME_VALID == 0U) {
+    return SENSOR_ERROR;
+  }
+
+  // Initialize VSI peripheral
+  ARM_VSI6->Timer.Control = 0U;
+  ARM_VSI6->DMA.Control   = 0U;
+  ARM_VSI6->IRQ.Clear     = SENSOR_EVENT_DATA | SENSOR_EVENT_OVERFLOW;
+  ARM_VSI6->IRQ.Enable    = SENSOR_EVENT_DATA | SENSOR_EVENT_OVERFLOW;
+  ARM_VSI6->CONTROL       = 0U;
+
+  // Enable peripheral interrupts
+//NVIC_EnableIRQ(ARM_VSI6_IRQn);
+  NVIC->ISER[(((uint32_t)ARM_VSI6_IRQn) >> 5UL)] = (uint32_t)(1UL << (((uint32_t)ARM_VSI6_IRQn) & 0x1FUL));
+  __DSB();
+  __ISB();
+
+  return SENSOR_OK;
+}
+
+// Uninitialize VSI
+int32_t VSI6_Uninitialize (void);
+int32_t VSI6_Uninitialize (void) {
+
+  // Disable peripheral interrupts
+//NVIC_DisableIRQ(ARM_VSI6_IRQn);
+  NVIC->ICER[(((uint32_t)ARM_VSI6_IRQn) >> 5UL)] = (uint32_t)(1UL << (((uint32_t)ARM_VSI6_IRQn) & 0x1FUL));
+  __DSB();
+  __ISB();
+
+  // Uninitialize VSI peripheral
+  ARM_VSI6->Timer.Control = 0U;
+  ARM_VSI6->DMA.Control   = 0U;
+  ARM_VSI6->IRQ.Clear     = SENSOR_EVENT_DATA | SENSOR_EVENT_OVERFLOW;
+  ARM_VSI6->IRQ.Enable    = 0U;
+  ARM_VSI6->CONTROL       = 0U;
+
+  return SENSOR_OK;
+}
+
+// Register sensor events
+static int32_t RegisterEvents_6 (sensorId_t id, sensorEvent_t event_cb, uint32_t event_mask) {
+
+  SensorId_6  = id;
+  EventFunc_6 = event_cb;
+  EventMask_6 = event_mask;
+
+  return SENSOR_OK;
+}
+
+// Enable sensor
+static int32_t Enable_6 (void) {
+  int32_t ret = SENSOR_ERROR;
+
+  #if   (SENSOR6_FIFO_SIZE != 0U)
+    ARM_VSI6->SAMPLE_SIZE    = SENSOR6_SAMPLE_SIZE;
+    ARM_VSI6->DATA_THRESHOLD = SENSOR6_DATA_THRESHOLD;
+    ARM_VSI6->FIFO_SIZE      = SENSOR6_FIFO_SIZE;
+    ARM_VSI6->CONTROL        = CONTROL_ENABLE_Msk;
+    ARM_VSI6->Timer.Interval = SENSOR6_SAMPLE_INTERVAL;
+    ARM_VSI6->Timer.Control  = ARM_VSI_Timer_Periodic_Msk |
+                             #if (SENSOR6_DATA_THRESHOLD != 0U)
+                               ARM_VSI_Timer_Trig_IRQ_Msk |
+                             #endif
+                               ARM_VSI_Timer_Run_Msk;
+    ret = SENSOR_OK;
+  #elif (SENSOR6_BLOCK_NUM != 0U) && (SENSOR6_BLOCK_SIZE != 0U)
+    ARM_VSI6->CONTROL        = CONTROL_ENABLE_Msk |
+                               CONTROL_DMA_Msk;
+    BlockCnt_6               = 0U;
+    ARM_VSI6->DMA.Address    = (uint32_t)BlockMem_6;
+    ARM_VSI6->DMA.BlockNum   = SENSOR6_BLOCK_NUM;
+    ARM_VSI6->DMA.BlockSize  = SENSOR6_BLOCK_SIZE;
+    ARM_VSI6->DMA.Control    = ARM_VSI_DMA_Direction_P2M |
+                               ARM_VSI_DMA_Enable_Msk;
+    ARM_VSI6->Timer.Interval = SENSOR6_SAMPLE_INTERVAL *
+                              (SENSOR6_BLOCK_SIZE / SENSOR6_SAMPLE_SIZE);
+    ARM_VSI6->Timer.Control  = ARM_VSI_Timer_Periodic_Msk |
+                               ARM_VSI_Timer_Trig_DMA_Msk |
+                               ARM_VSI_Timer_Trig_IRQ_Msk |
+                               ARM_VSI_Timer_Run_Msk;
+    ret = SENSOR_OK;
+  #endif
+
+  return ret;
+}
+
+// Disable sensor
+static int32_t Disable_6 (void) {
+
+  #if   (SENSOR6_FIFO_SIZE != 0U)
+    ARM_VSI6->Timer.Control  = 0U;
+    ARM_VSI6->CONTROL        = 0U;
+  #elif (SENSOR6_BLOCK_NUM != 0U) && (SENSOR6_BLOCK_SIZE != 0U)
+    ARM_VSI6->Timer.Control  = 0U;
+    ARM_VSI6->DMA.Control    = 0U;
+    ARM_VSI6->CONTROL        = 0U;
+  #endif
+
+  return SENSOR_OK;
+}
+
+// Get overflow status
+static uint32_t GetOverflow_6 (void) {
+  return (ARM_VSI6->STATUS & STATUS_OVERFLOW_Msk);
+}
+
+// Read samples from sensor
+#if (SENSOR6_FIFO_SIZE != 0U)
+static uint32_t ReadSamples_6 (uint32_t num_samples, void *buf) {
+  uint32_t num;
+  uint32_t n, m;
+  uint8_t *p;
+
+  num = ARM_VSI6->SAMPLE_COUNT;
+  if (num > num_samples) {
+    num = num_samples;
+  }
+
+  p = (uint8_t *)buf;
+  for (n = num; n != 0U; n--) {
+    for (m = SENSOR6_SAMPLE_SIZE; m != 0U; m--) {
+      *p++ = (uint8_t)ARM_VSI6->SAMPLE_PORT;
+    }
+  }
+
+  return num;
+}
+#endif
+
+// Get block data
+#if (SENSOR6_BLOCK_NUM != 0U) && (SENSOR6_BLOCK_SIZE != 0U)
+static void * GetBlockData_6 (void) {
+  void *p = NULL;
+
+  if (ARM_VSI6->Timer.Count > BlockCnt_6) {
+    p = &BlockMem_6[BlockCnt_6 & (SENSOR6_BLOCK_SIZE - 1U)][0];
+    BlockCnt_6++;
+  }
+
+  return p;
+}
+#endif
+
+// Exported sensor functions
+sensorDrvHW_t sensorDrvHW_6 = {
+  RegisterEvents_6,
+  Enable_6,
+  Disable_6,
+  GetOverflow_6,
+#if (SENSOR6_FIFO_SIZE != 0U)
+  ReadSamples_6,
+#else
+  NULL,
+#endif
+#if (SENSOR6_BLOCK_NUM != 0U) && (SENSOR6_BLOCK_SIZE != 0U)
+  GetBlockData_6
+#else
+  NULL
+#endif
+};
+
+#endif
+
+
+// Sensor7 using VSI7
+#ifdef SENSOR7_NAME
+
+// Registered event variables
+static sensorId_t    SensorId_7;
+static sensorEvent_t EventFunc_7 = NULL;
+static uint32_t      EventMask_7 = 0U;
+
+// Block memory
+#if (SENSOR7_BLOCK_NUM != 0U) && (SENSOR7_BLOCK_SIZE != 0U)
+static uint8_t       BlockMem_7[SENSOR7_BLOCK_NUM][SENSOR7_BLOCK_SIZE];
+static uint32_t      BlockCnt_7 = 0U;
+#endif
+
+// VSI interrupt handler
+void ARM_VSI7_Handler (void);
+void ARM_VSI7_Handler (void) {
+  uint32_t event;
+
+  event = ARM_VSI7->IRQ.Status;
+  ARM_VSI7->IRQ.Clear = event;
+  __DSB();
+  __ISB();
+
+  if ((EventFunc_7 != NULL) && ((event & EventMask_7) != 0U)) {
+    EventFunc_7(SensorId_7, event);
+  }
+}
+
+// Initialize VSI
+int32_t VSI7_Initialize (void);
+int32_t VSI7_Initialize (void) {
+  uint32_t n;
+  char *p;
+
+  // Register sensor name
+  n = strlen(SENSOR7_NAME);
+  ARM_VSI7->SENSOR_NAME_LEN = n;
+  for (p = SENSOR7_NAME ; n!= 0U; n--) {
+    ARM_VSI7->SENSOR_NAME_CHAR = *p++;
+  }
+  if (ARM_VSI7->SENSOR_NAME_VALID == 0U) {
+    return SENSOR_ERROR;
+  }
+
+  // Initialize VSI peripheral
+  ARM_VSI7->Timer.Control = 0U;
+  ARM_VSI7->DMA.Control   = 0U;
+  ARM_VSI7->IRQ.Clear     = SENSOR_EVENT_DATA | SENSOR_EVENT_OVERFLOW;
+  ARM_VSI7->IRQ.Enable    = SENSOR_EVENT_DATA | SENSOR_EVENT_OVERFLOW;
+  ARM_VSI7->CONTROL       = 0U;
+
+  // Enable peripheral interrupts
+//NVIC_EnableIRQ(ARM_VSI7_IRQn);
+  NVIC->ISER[(((uint32_t)ARM_VSI7_IRQn) >> 5UL)] = (uint32_t)(1UL << (((uint32_t)ARM_VSI7_IRQn) & 0x1FUL));
+  __DSB();
+  __ISB();
+
+  return SENSOR_OK;
+}
+
+// Uninitialize VSI
+int32_t VSI7_Uninitialize (void);
+int32_t VSI7_Uninitialize (void) {
+
+  // Disable peripheral interrupts
+//NVIC_DisableIRQ(ARM_VSI7_IRQn);
+  NVIC->ICER[(((uint32_t)ARM_VSI7_IRQn) >> 5UL)] = (uint32_t)(1UL << (((uint32_t)ARM_VSI7_IRQn) & 0x1FUL));
+  __DSB();
+  __ISB();
+
+  // Uninitialize VSI peripheral
+  ARM_VSI7->Timer.Control = 0U;
+  ARM_VSI7->DMA.Control   = 0U;
+  ARM_VSI7->IRQ.Clear     = SENSOR_EVENT_DATA | SENSOR_EVENT_OVERFLOW;
+  ARM_VSI7->IRQ.Enable    = 0U;
+  ARM_VSI7->CONTROL       = 0U;
+
+  return SENSOR_OK;
+}
+
+// Register sensor events
+static int32_t RegisterEvents_7 (sensorId_t id, sensorEvent_t event_cb, uint32_t event_mask) {
+
+  SensorId_7  = id;
+  EventFunc_7 = event_cb;
+  EventMask_7 = event_mask;
+
+  return SENSOR_OK;
+}
+
+// Enable sensor
+static int32_t Enable_7 (void) {
+  int32_t ret = SENSOR_ERROR;
+
+  #if   (SENSOR7_FIFO_SIZE != 0U)
+    ARM_VSI7->SAMPLE_SIZE    = SENSOR7_SAMPLE_SIZE;
+    ARM_VSI7->DATA_THRESHOLD = SENSOR7_DATA_THRESHOLD;
+    ARM_VSI7->FIFO_SIZE      = SENSOR7_FIFO_SIZE;
+    ARM_VSI7->CONTROL        = CONTROL_ENABLE_Msk;
+    ARM_VSI7->Timer.Interval = SENSOR7_SAMPLE_INTERVAL;
+    ARM_VSI7->Timer.Control  = ARM_VSI_Timer_Periodic_Msk |
+                             #if (SENSOR7_DATA_THRESHOLD != 0U)
+                               ARM_VSI_Timer_Trig_IRQ_Msk |
+                             #endif
+                               ARM_VSI_Timer_Run_Msk;
+    ret = SENSOR_OK;
+  #elif (SENSOR7_BLOCK_NUM != 0U) && (SENSOR7_BLOCK_SIZE != 0U)
+    ARM_VSI7->CONTROL        = CONTROL_ENABLE_Msk |
+                               CONTROL_DMA_Msk;
+    BlockCnt_7               = 0U;
+    ARM_VSI7->DMA.Address    = (uint32_t)BlockMem_7;
+    ARM_VSI7->DMA.BlockNum   = SENSOR7_BLOCK_NUM;
+    ARM_VSI7->DMA.BlockSize  = SENSOR7_BLOCK_SIZE;
+    ARM_VSI7->DMA.Control    = ARM_VSI_DMA_Direction_P2M |
+                               ARM_VSI_DMA_Enable_Msk;
+    ARM_VSI7->Timer.Interval = SENSOR7_SAMPLE_INTERVAL *
+                              (SENSOR7_BLOCK_SIZE / SENSOR7_SAMPLE_SIZE);
+    ARM_VSI7->Timer.Control  = ARM_VSI_Timer_Periodic_Msk |
+                               ARM_VSI_Timer_Trig_DMA_Msk |
+                               ARM_VSI_Timer_Trig_IRQ_Msk |
+                               ARM_VSI_Timer_Run_Msk;
+    ret = SENSOR_OK;
+  #endif
+
+  return ret;
+}
+
+// Disable sensor
+static int32_t Disable_7 (void) {
+
+  #if   (SENSOR7_FIFO_SIZE != 0U)
+    ARM_VSI7->Timer.Control  = 0U;
+    ARM_VSI7->CONTROL        = 0U;
+  #elif (SENSOR7_BLOCK_NUM != 0U) && (SENSOR7_BLOCK_SIZE != 0U)
+    ARM_VSI7->Timer.Control  = 0U;
+    ARM_VSI7->DMA.Control    = 0U;
+    ARM_VSI7->CONTROL        = 0U;
+  #endif
+
+  return SENSOR_OK;
+}
+
+// Get overflow status
+static uint32_t GetOverflow_7 (void) {
+  return (ARM_VSI7->STATUS & STATUS_OVERFLOW_Msk);
+}
+
+// Read samples from sensor
+#if (SENSOR7_FIFO_SIZE != 0U)
+static uint32_t ReadSamples_7 (uint32_t num_samples, void *buf) {
+  uint32_t num;
+  uint32_t n, m;
+  uint8_t *p;
+
+  num = ARM_VSI7->SAMPLE_COUNT;
+  if (num > num_samples) {
+    num = num_samples;
+  }
+
+  p = (uint8_t *)buf;
+  for (n = num; n != 0U; n--) {
+    for (m = SENSOR7_SAMPLE_SIZE; m != 0U; m--) {
+      *p++ = (uint8_t)ARM_VSI7->SAMPLE_PORT;
+    }
+  }
+
+  return num;
+}
+#endif
+
+// Get block data
+#if (SENSOR7_BLOCK_NUM != 0U) && (SENSOR7_BLOCK_SIZE != 0U)
+static void * GetBlockData_7 (void) {
+  void *p = NULL;
+
+  if (ARM_VSI7->Timer.Count > BlockCnt_7) {
+    p = &BlockMem_7[BlockCnt_7 & (SENSOR7_BLOCK_SIZE - 1U)][0];
+    BlockCnt_7++;
+  }
+
+  return p;
+}
+#endif
+
+// Exported sensor functions
+sensorDrvHW_t sensorDrvHW_7 = {
+  RegisterEvents_7,
+  Enable_7,
+  Disable_7,
+  GetOverflow_7,
+#if (SENSOR7_FIFO_SIZE != 0U)
+  ReadSamples_7,
+#else
+  NULL,
+#endif
+#if (SENSOR7_BLOCK_NUM != 0U) && (SENSOR7_BLOCK_SIZE != 0U)
+  GetBlockData_7
 #else
   NULL
 #endif
