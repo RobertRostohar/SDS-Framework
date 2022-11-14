@@ -215,7 +215,7 @@ static uint32_t ReadSamples (uint32_t num_samples, void *buf) {
       *p++ = (uint8_t)ARM_VSI0->SAMPLE_PORT;
     }
   }
-  
+
   return num;
 }
 #endif
