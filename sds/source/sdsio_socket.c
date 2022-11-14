@@ -206,37 +206,37 @@ sdsioId_t sdsioOpen (const char *name, sdsioMode_t mode) {
   int32_t     stat = SDSIO_OK;
   uint32_t    sdsio_id = 0U;
 
-  if ((name == NULL) || (strlen(name) >= SDSIO_NAME_MAX_LEN)) {
-    stat = SDSIO_ERROR;
-  }
-  if ((stat == SDSIO_OK) && (sdsio_cnt == 0U)) {
-    stat = sdsioInit();
-  }
-  sdsioLock();
-  if (stat == SDSIO_OK) {
-    req->command   = SDSIO_CMD_OPEN;
-    req->argument  = mode;
-    req->data_size = strlen(name) + 1U;
+  if ((name != NULL) && (strlen(name) < SDSIO_NAME_MAX_LEN)) {
+    if (sdsio_cnt == 0U) {
+      stat = sdsioInit();
+    }
 
-    req_data = (uint8_t *)req + sizeof(request_t);
-    strcpy((char *)req_data, name);
+    if (stat == SDSIO_OK){
+      sdsioLock();
 
-    resp_size = sdsioTransfer(req, sizeof(request_t) + req->data_size, sdsio_buf_resp, sizeof(sdsio_buf_rx));
+      req->command   = SDSIO_CMD_OPEN;
+      req->argument  = mode;
+      req->data_size = strlen(name) + 1U;
 
-    if ((resp_size != 0U) && (resp->data_size == 4U)) {
-      resp_data =  (uint8_t  *)resp + sizeof(request_t);
-      sdsio_id  = *(uint32_t *)resp_data;
-      sdsio_cnt++;
-    } else {
-      stat = SDSIO_ERROR;
+      req_data = (uint8_t *)req + sizeof(request_t);
+      strcpy((char *)req_data, name);
+
+      resp_size = sdsioTransfer(req, sizeof(request_t) + req->data_size, sdsio_buf_resp, sizeof(sdsio_buf_rx));
+
+      if ((resp_size != 0U) && (resp->data_size == 4U)) {
+        resp_data =  (uint8_t  *)resp + sizeof(request_t);
+        sdsio_id  = *(uint32_t *)resp_data;
+        sdsio_cnt++;
+      }
+
+      sdsioUnLock();
+
+      if ((sdsio_id == 0U) && (sdsio_cnt == 0U)) {
+        sdsioUninit();
+      }
     }
   }
 
-  if ((stat == SDSIO_ERROR) && (sdsio_cnt == 0U)) {
-    sdsioUninit();
-  }
-
-  sdsioUnLock();
   return (sdsioId_t)sdsio_id;
 }
 
@@ -249,7 +249,7 @@ sdsioId_t sdsioOpen (const char *name, sdsioMode_t mode) {
       header: packet idx, SDSIO_CMD_CLOSE, sdsio identifier, data size = 4
       data    0=Ok, else error (4 bytes)
 */
-int32_t sdsioClose (sdsioId_t id) {  
+int32_t sdsioClose (sdsioId_t id) {
   void       *resp_data;
   uint32_t    resp_size;
   request_t  *req  = sdsio_buf_req;
@@ -272,10 +272,11 @@ int32_t sdsioClose (sdsioId_t id) {
       }
     }
   }
+  sdsioUnLock();
+
   if (sdsio_cnt == 0U) {
     sdsioUninit();
   }
-  sdsioUnLock();
 
   return ret;
 }
