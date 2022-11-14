@@ -27,7 +27,7 @@ extern void demo (void);
 /*---------------------------------------------------------------------------
  * Application main thread
  *---------------------------------------------------------------------------*/
-static void app_main (void *argument) {
+static void __NO_RETURN app_main (void *argument) {
   int32_t status = 0;
 
   (void)argument;
