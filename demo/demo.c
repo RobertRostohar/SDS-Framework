@@ -173,7 +173,7 @@ static void sds_event_callback (sdsId_t id, uint32_t event, void *arg) {
 // Sensor Demo
 void __NO_RETURN demo(void) {
   uint32_t  num, flags;
-  uint8_t   buf[6];
+  uint32_t  buf[2];
   uint16_t *data_u16 = (uint16_t *)buf;
   float    *data_f   = (float *)buf;
 
