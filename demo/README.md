@@ -61,24 +61,24 @@ Use a programmer to download the HW image to the hardware target.
 ### HW Target (B-U585I-IOT02A)
 
 Execute the following steps:
- - run `../utilities/SDS-Socket/SDS-Socket.py` to start the socket server on host PC
- - connect the board ST-Link USB to a PC (provides also power)
- - open terminal on PC and connect to board's serial port (Baud rate: 115200)
- - reset the target
- - wait until connected to WiFi
- - press USER Button (vioBUTTON0) to start/stop reading and recording sensor data
+ - run `../utilities/SDS-Socket/SDS-Socket.py` to start the socket server on the host PC
+ - connect the board's ST-Link USB to the PC (provides also power)
+ - open terminal on the PC and connect to the board's serial port (Baud rate: 115200)
+ - reset the target (press RST button on the board)
+ - wait until connected to WiFi (status printed to the terminal)
+ - press USER (vioBUTTON0) button to start/stop reading and recording sensor data
    >Note: The recordings start with index 0 and increment for each subsequent start/stop.
 
-Sensor data is recorded in files `<sensor_name><index>.sds` and also printed to the terminal.
+Sensor data is recorded to files `<sensor_name>.<index>.sds` and also printed to the terminal.
 
 ### AVH Target
 
 Execute the following steps:
- - run the VHT model from command line by executing:
+ - run the VHT model from the command line by executing:
    ```
    VHT_MPS3_Corstone_SSE-300 -f Board/AVH_MPS3_Corstone-300/fvp_config.txt -V ../sensor/vsi/pyhton out/Demo/AVH/Debug/Demo.Debug+AVH.axf
    ```
  - press PB0 (vioBUTTON0) button (double click PB0 in the VHT visualization dialog)
    to start/stop reading sensor data
 
-Sensor data is read from files `<sensor_name><index>.sds` and also printed to the terminal.
+Sensor data is read from files `<sensor_name>.<index>.sds` and also printed to the terminal.
