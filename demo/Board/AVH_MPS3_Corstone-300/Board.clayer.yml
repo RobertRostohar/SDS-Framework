@@ -34,9 +34,9 @@ layer:
     - ../../../sensor/include
     - ../../../sensor/vsi/include
 
-  defines:
-    - CMSIS_VIN
-    - CMSIS_VOUT
+  # defines:
+  #   - CMSIS_VIN
+  #   - CMSIS_VOUT
 
   misc:
     - Link:
