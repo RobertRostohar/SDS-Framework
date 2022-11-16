@@ -3,29 +3,20 @@ from os import path
 import socket
 import atexit
 
-udp_ip = ""
-udp_port = 5000
-
 sock = socket.socket()
 
 stream_identifier = 0
 stream_files = {}
-
-#Commands
-cmd_open  = 1
-cmd_close = 2
-cmd_write = 3
-cmd_read  = 4
 
 # Command open
 def command_open(name, RdWr):
   global stream_identifier
   file_index = 0
 
-  fname = "{}{}.sds".format(name, file_index)
+  fname = f"{name}.{file_index}.sds"
   while path.exists(fname) == True:
     file_index = file_index + 1
-    fname = "{}{}.sds".format(name, file_index)
+    fname = f"{name}.{file_index}.sds"
 
   try:
     f = open(fname, "wb")
@@ -33,7 +24,7 @@ def command_open(name, RdWr):
     stream_files.update({stream_identifier: f})
     return stream_identifier
   except:
-    print("Can not open {}".format(fname))
+    print(f"Can not open {fname}")
     return 0
 
 # Command Close
@@ -43,7 +34,7 @@ def command_close(id):
     stream_files.pop(id)
     return 0x00000000
   except:
-    print("Can not close {}".format(stream_files.get(id)))
+    print(f"Can not close {stream_files.get(id)}")
     return 0xFFFFFFFF
 
 # Command Write
@@ -52,14 +43,14 @@ def command_write(id, data):
     stream_files.get(id).write(data)
     return len(data)
   except Exception as err:
-    print("Can not write to {}".format(stream_files.get(id)))
-    print("  Error: {}".format(err))
+    print(f"Can not write to {stream_files.get(id)}")
+    print(f"  Error: {err}")
     return 0  
 
 def set_communication ():
   #Get local IP
-  udo_ip = socket.gethostbyname(socket.gethostname())
-  print("{}".format(udo_ip))
+  udp_ip = socket.gethostbyname(socket.gethostname())
+  print(f"{udp_ip}")
   udp_port = 5000
   #Create UDP socket (port 5000)
   sock = socket.socket(socket.AF_INET,    # Internet
@@ -89,16 +80,20 @@ def main():
     if idx == 0:
       packet_idx = 0
     
-    print("Command   {}, {}".format(packet_idx, idx))
+    print(f"Command   {packet_idx}, {idx}")
     if packet_idx == idx:
 
-      print("   {} {} {} {} {}".format(packet_idx, command, argument, data_size, data))
+      print(f"   {packet_idx} {command} {argument} {data_size} {data}")
+
       # Execute command
-      if command == cmd_open:
+      # Open
+      if command == 1:
         ret = command_open(data.decode('utf-8').split("\0")[0], argument)
-      elif command == cmd_close:
-        ret = command_close(argument)   
-      elif command == cmd_write:
+      # Close 
+      elif command == 2:
+        ret = command_close(argument) 
+      # Write
+      elif command == 3:
         ret = command_write(argument, data)
 
       # Prepare response
@@ -111,7 +106,7 @@ def main():
 
     # Send Response
     print("Response")
-    print("   {} {} {} {} {}".format(packet_idx, command, argument, response, ret))
+    print(f"   {packet_idx} {command} {argument} {response} {ret}")
     try:
       resp = bytes(response)
       sock.sendto(bytes(resp), addr)
