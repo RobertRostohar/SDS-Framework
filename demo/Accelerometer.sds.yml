@@ -5,16 +5,16 @@ sds:
   content:
   - value: x
     type: uint16_t
-    scale: 0.061
+    scale: 0.000061
     unit: G
-    offset: 0
+    offset: -2
   - value: y
     type: uint16_t
-    scale: 0.061
+    scale: 0.000061
     unit: G
-    offset: 0
+    offset: -2
   - value: z
     type: uint16_t
-    scale: 0.061
+    scale: 0.000061
     unit: G
-    offset: 0
+    offset: -2
