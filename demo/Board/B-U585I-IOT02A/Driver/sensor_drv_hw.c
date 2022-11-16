@@ -15,8 +15,10 @@
 
 static int32_t TemperatureSensor_Enable (void) {
   int32_t ret = SENSOR_ERROR;
+  float   value;
 
   if (BSP_ENV_SENSOR_Enable(0, ENV_TEMPERATURE) == BSP_ERROR_NONE) {
+    BSP_ENV_SENSOR_GetValue(0, ENV_TEMPERATURE, &value);
     ret = SENSOR_OK;
   }
   return ret;
@@ -67,8 +69,10 @@ sensorDrvHW_t sensorDrvHW_0 = {
 
 static int32_t HumiditySensor_Enable (void) {
   int32_t ret = SENSOR_ERROR;
+  float   value;
 
   if (BSP_ENV_SENSOR_Enable(0, ENV_HUMIDITY) == BSP_ERROR_NONE) {
+    BSP_ENV_SENSOR_GetValue(0, ENV_HUMIDITY, &value);
     ret = SENSOR_OK;
   }
   return ret;
