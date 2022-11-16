@@ -16,13 +16,13 @@
 
 // Configuration
 #ifndef SDS_BUF_SIZE_ACCELEROMETER
-#define SDS_BUF_SIZE_ACCELEROMETER          64U
+#define SDS_BUF_SIZE_ACCELEROMETER          4096U
 #endif
 #ifndef SDS_BUF_SIZE_TEMPERATURE_SENSOR
-#define SDS_BUF_SIZE_TEMPERATURE_SENSOR     8U
+#define SDS_BUF_SIZE_TEMPERATURE_SENSOR     128U
 #endif
 #ifndef SDS_THRESHOLD_ACCELEROMETER
-#define SDS_THRESHOLD_ACCELEROMETER         6U
+#define SDS_THRESHOLD_ACCELEROMETER         624U
 #endif
 #ifndef SDS_THRESHOLD_TEMPERATURE_SENSOR
 #define SDS_THRESHOLD_TEMPERATURE_SENSOR    4U
@@ -33,13 +33,13 @@
 #define REC_BUF_SIZE_ACCELEROMETER          8192U
 #endif
 #ifndef REC_BUF_SIZE_TEMPERATURE_SENSOR
-#define REC_BUF_SIZE_TEMPERATURE_SENSOR     128U
+#define REC_BUF_SIZE_TEMPERATURE_SENSOR     256U
 #endif
 #ifndef REC_RECORD_SIZE_ACCELEROMETER
 #define REC_RECORD_SIZE_ACCELEROMETER       1020U
 #endif
 #ifndef REC_RECORD_SIZE_TEMPERATURE_SENSOR
-#define REC_RECORD_SIZE_TEMPERATURE_SENSOR  32U
+#define REC_RECORD_SIZE_TEMPERATURE_SENSOR  16U
 #endif
 #endif
 
@@ -172,7 +172,7 @@ static void sds_event_callback (sdsId_t id, uint32_t event, void *arg) {
 
 // Sensor Demo
 void __NO_RETURN demo(void) {
-  uint32_t  num, flags;
+  uint32_t  n, num, flags;
   uint32_t  buf[2];
   uint16_t *data_u16 = (uint16_t *)buf;
   float    *data_f   = (float *)buf;
@@ -221,6 +221,8 @@ void __NO_RETURN demo(void) {
 
       // Button pressed event
       if (flags & EVENT_BUTTON) {
+        printf("Button pressed\r\n");
+
         if (sensorGetStatus(sensorId_accelerometer).active == 0U) {
 #ifdef RECORDER_ENABLED
           // Open Recorder
@@ -230,6 +232,7 @@ void __NO_RETURN demo(void) {
                                            REC_RECORD_SIZE_ACCELEROMETER);
 #endif
           sensorEnable(sensorId_accelerometer);
+          printf("Accelerometer enabled\r\n");
         } else {
           sensorDisable(sensorId_accelerometer);
 #ifdef RECORDER_ENABLED
@@ -237,6 +240,7 @@ void __NO_RETURN demo(void) {
           sdsRecClose(recId_accelerometer);
           recId_accelerometer = NULL;
 #endif
+          printf("Accelerometer disabled\r\n");
         }
 
         if (sensorGetStatus(sensorId_temperatureSensor).active == 0U) {
@@ -248,6 +252,7 @@ void __NO_RETURN demo(void) {
                                                REC_RECORD_SIZE_TEMPERATURE_SENSOR);
 #endif
           sensorEnable(sensorId_temperatureSensor);
+          printf("Temperature sensor enabled\r\n");
         } else {
           sensorDisable(sensorId_temperatureSensor);
 #ifdef RECORDER_ENABLED
@@ -255,30 +260,33 @@ void __NO_RETURN demo(void) {
           sdsRecClose(recId_temperatureSensor);
           recId_temperatureSensor = NULL;
 #endif
+          printf("Temperature sensor disabled\r\n");
         }
       }
 
       // Accelerometer data event
       if (((flags & EVENT_DATA_ACCELEROMETER) != 0U) &&
           (sensorGetStatus(sensorId_accelerometer).active != 0U)) {
-        do {
+
+        for (n = 0U; n < (SDS_THRESHOLD_ACCELEROMETER / sensorConfig_accelerometer->sample_size); n++) {
           num = sdsRead(sdsId_accelerometer, buf, sensorConfig_accelerometer->sample_size);
           if (num == sensorConfig_accelerometer->sample_size) {
             printf("%s: x=%i, y=%i, z=%i\r\n",sensorConfig_accelerometer->name,
                                               data_u16[0], data_u16[1], data_u16[2]);
           }
-        } while (num != 0U);
+      }
       }
 
       // Temperature sensor data event
       if (((flags & EVENT_DATA_TEMPERATURE_SENSOR) != 0U) &&
           (sensorGetStatus(sensorId_temperatureSensor).active != 0U)) {
-        do {
+
+        for (n = 0U; n < (SDS_THRESHOLD_TEMPERATURE_SENSOR / sensorConfig_temperatureSensor->sample_size); n++) {
           num = sdsRead(sdsId_temperatureSensor, buf, sensorConfig_temperatureSensor->sample_size);
           if (num == sensorConfig_temperatureSensor->sample_size) {
             printf("%s: value=%f\r\n", sensorConfig_temperatureSensor->name, (double)*data_f);
           }
-        } while(num != 0U);
+        }
       }
     }
   }
