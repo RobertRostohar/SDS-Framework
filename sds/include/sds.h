@@ -79,6 +79,14 @@ uint32_t sdsWrite (sdsId_t id, const void *buf, uint32_t buf_size);
 uint32_t sdsRead (sdsId_t id, void *buf, uint32_t buf_size);
 
 /**
+  \fn          int32_t sdsClear (sdsId_t id)
+  \brief       Clear stream data.
+  \param[in]   id             \ref sdsId_t
+  \return      return code
+*/
+int32_t sdsClear (sdsId_t id);
+
+/**
   \fn          uint32_t sdsGetCount (sdsId_t id)
   \brief       Get data count in stream.
   \param[in]   id             \ref sdsId_t
