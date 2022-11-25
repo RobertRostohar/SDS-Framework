@@ -24,6 +24,8 @@ typedef struct {
   uint32_t   threshold_low;
   uint32_t   cnt_in;
   uint32_t   cnt_out;
+  uint32_t   idx_in;
+  uint32_t   idx_out;
 } sds_t;
 
 static sds_t   Streams[SDS_MAX_STREAMS] = {0};
@@ -62,8 +64,8 @@ static void sdsFree (sds_t *stream) {
 sdsId_t sdsOpen (void *buf, uint32_t buf_size, uint32_t threshold_low, uint32_t threshold_high) {
   sds_t *stream = NULL;
 
-  // Buffer pointer needs to be valid and buffer size needs to be power of 2
-  if ((buf != NULL) && (buf_size != 0U) && ((buf_size & (buf_size - 1U)) == 0U)) {
+  // Buffer pointer needs to be valid
+  if ((buf != NULL) && (buf_size != 0U)) {
     stream = sdsAlloc();
     if (stream != NULL) {
       memset(stream, 0, sizeof(sds_t));
@@ -106,14 +108,12 @@ int32_t sdsRegisterEvents (sdsId_t id, sdsEvent_t event_cb, uint32_t event_mask,
 uint32_t sdsWrite (sdsId_t id, const void *buf, uint32_t buf_size) {
   sds_t *stream = id;
   uint32_t num = 0U;
-  uint32_t offset;
   uint32_t cnt_free, cnt_used, cnt_used_new, cnt_limit;
 
   if ((stream != NULL) && (buf != NULL) && (buf_size != 0U)) {
 
     cnt_used = stream->cnt_in - stream->cnt_out;
     cnt_free = stream->buf_size - cnt_used;
-    offset = stream->cnt_in & (stream->buf_size - 1U);
 
     if (buf_size < cnt_free) {
       num = buf_size;
@@ -122,13 +122,15 @@ uint32_t sdsWrite (sdsId_t id, const void *buf, uint32_t buf_size) {
       num = cnt_free;
     }
 
-    cnt_limit = stream->buf_size - offset;
+    cnt_limit = stream->buf_size - stream->idx_in;
     if (num > cnt_limit) {
       // buffer rollover
-      memcpy(stream->buf + offset, buf, cnt_limit);
+      memcpy(stream->buf + stream->idx_in, buf, cnt_limit);
       memcpy(stream->buf, (const uint8_t *)buf + cnt_limit, num - cnt_limit);
+      stream->idx_in = num - cnt_limit;
     } else {
-      memcpy(stream->buf + offset, buf, num);
+      memcpy(stream->buf + stream->idx_in, buf, num);
+      stream->idx_in += num;
     }
     stream->cnt_in += num;
 
@@ -146,13 +148,11 @@ uint32_t sdsWrite (sdsId_t id, const void *buf, uint32_t buf_size) {
 uint32_t sdsRead (sdsId_t id, void *buf, uint32_t buf_size) {
   sds_t *stream = id;
   uint32_t num = 0U;
-  uint32_t offset;
   uint32_t cnt_used, cnt_used_new, cnt_limit;
 
   if ((stream != NULL) && (buf != NULL) && (buf_size != 0U)) {
 
     cnt_used = stream->cnt_in - stream->cnt_out;
-    offset = stream->cnt_out & (stream->buf_size - 1U);
 
     if (buf_size < cnt_used) {
       num = buf_size;
@@ -161,13 +161,15 @@ uint32_t sdsRead (sdsId_t id, void *buf, uint32_t buf_size) {
       num = cnt_used;
     }
 
-    cnt_limit = stream->buf_size - offset;
+    cnt_limit = stream->buf_size - stream->idx_out;
     if (num > cnt_limit) {
       // buffer rollover
-      memcpy(buf, stream->buf + offset, cnt_limit);
+      memcpy(buf, stream->buf + stream->idx_out, cnt_limit);
       memcpy((uint8_t *)buf + cnt_limit, stream->buf, num - cnt_limit);
+      stream->idx_out = num - cnt_limit;
     } else {
-      memcpy(buf, stream->buf + offset, num);
+      memcpy(buf, stream->buf + stream->idx_out, num);
+      stream->idx_out += num;
     }
     stream->cnt_out += num;
 
