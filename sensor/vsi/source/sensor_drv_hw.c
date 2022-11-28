@@ -226,7 +226,7 @@ static void * GetBlockData_0 (void) {
   void *p = NULL;
 
   if (ARM_VSI0->Timer.Count > BlockCnt_0) {
-    p = &BlockMem_0[BlockCnt_0 & (SENSOR0_BLOCK_SIZE - 1U)][0];
+    p = &BlockMem_0[BlockCnt_0 & (SENSOR0_BLOCK_NUM - 1U)][0];
     BlockCnt_0++;
   }
 
@@ -432,7 +432,7 @@ static void * GetBlockData_1 (void) {
   void *p = NULL;
 
   if (ARM_VSI1->Timer.Count > BlockCnt_1) {
-    p = &BlockMem_1[BlockCnt_1 & (SENSOR1_BLOCK_SIZE - 1U)][0];
+    p = &BlockMem_1[BlockCnt_1 & (SENSOR1_BLOCK_NUM - 1U)][0];
     BlockCnt_1++;
   }
 
@@ -638,7 +638,7 @@ static void * GetBlockData_2 (void) {
   void *p = NULL;
 
   if (ARM_VSI2->Timer.Count > BlockCnt_2) {
-    p = &BlockMem_2[BlockCnt_2 & (SENSOR2_BLOCK_SIZE - 1U)][0];
+    p = &BlockMem_2[BlockCnt_2 & (SENSOR2_BLOCK_NUM - 1U)][0];
     BlockCnt_2++;
   }
 
@@ -844,7 +844,7 @@ static void * GetBlockData_3 (void) {
   void *p = NULL;
 
   if (ARM_VSI3->Timer.Count > BlockCnt_3) {
-    p = &BlockMem_3[BlockCnt_3 & (SENSOR3_BLOCK_SIZE - 1U)][0];
+    p = &BlockMem_3[BlockCnt_3 & (SENSOR3_BLOCK_NUM - 1U)][0];
     BlockCnt_3++;
   }
 
@@ -1050,7 +1050,7 @@ static void * GetBlockData_4 (void) {
   void *p = NULL;
 
   if (ARM_VSI4->Timer.Count > BlockCnt_4) {
-    p = &BlockMem_4[BlockCnt_4 & (SENSOR4_BLOCK_SIZE - 1U)][0];
+    p = &BlockMem_4[BlockCnt_4 & (SENSOR4_BLOCK_NUM - 1U)][0];
     BlockCnt_4++;
   }
 
@@ -1256,7 +1256,7 @@ static void * GetBlockData_5 (void) {
   void *p = NULL;
 
   if (ARM_VSI5->Timer.Count > BlockCnt_5) {
-    p = &BlockMem_5[BlockCnt_5 & (SENSOR5_BLOCK_SIZE - 1U)][0];
+    p = &BlockMem_5[BlockCnt_5 & (SENSOR5_BLOCK_NUM - 1U)][0];
     BlockCnt_5++;
   }
 
@@ -1462,7 +1462,7 @@ static void * GetBlockData_6 (void) {
   void *p = NULL;
 
   if (ARM_VSI6->Timer.Count > BlockCnt_6) {
-    p = &BlockMem_6[BlockCnt_6 & (SENSOR6_BLOCK_SIZE - 1U)][0];
+    p = &BlockMem_6[BlockCnt_6 & (SENSOR6_BLOCK_NUM - 1U)][0];
     BlockCnt_6++;
   }
 
@@ -1668,7 +1668,7 @@ static void * GetBlockData_7 (void) {
   void *p = NULL;
 
   if (ARM_VSI7->Timer.Count > BlockCnt_7) {
-    p = &BlockMem_7[BlockCnt_7 & (SENSOR7_BLOCK_SIZE - 1U)][0];
+    p = &BlockMem_7[BlockCnt_7 & (SENSOR7_BLOCK_NUM - 1U)][0];
     BlockCnt_7++;
   }
 
