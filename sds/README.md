@@ -34,7 +34,6 @@ Function calls shall be non-blocking and thread-safe.
 
 The following reference implementation is provided in [sds.c](source/sds.c). It features:
 - user configurable number of streams (default: 16 streams)
-- user buffer size needs to be power of 2
 
 ## Synchronous Data Stream using Input/Output
 
@@ -68,7 +67,6 @@ All function calls except `sdsRecInit/UnInit` shall be thread-safe.
 
 The following reference implementation is provided in [sds_rec.c](source/sds_rec.c). It features:
 - user configurable number of streams (default: 8 streams, max: 30)
-- user buffer size needs to be power of 2
 - user configurable maximum record size (default: 1024 bytes)
 - uses SDS buffer (non-blocking `sdsRecWrite`) and SDSIO
 - uses a thread for reading from SDS buffer and writing to blocking SDSIO
