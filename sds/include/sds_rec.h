@@ -49,10 +49,10 @@ int32_t sdsRecUninit (void);
   \param[in]   name           stream name (pointer to NULL terminated string)
   \param[in]   buf            pointer to buffer for stream
   \param[in]   buf_size       buffer size in bytes
-  \param[in]   record_size    record size in bytes
+  \param[in]   io_threshold   threshold in bytes to trigger I/O write (when equal or above threshold)
   \return      \ref sdsRecId_t
 */
-sdsRecId_t sdsRecOpen (const char *name, void *buf, uint32_t buf_size, uint32_t record_size);
+sdsRecId_t sdsRecOpen (const char *name, void *buf, uint32_t buf_size, uint32_t io_threshold);
 
 /**
   \fn          int32_t sdsRecClose (sdsRecId_t id)
@@ -66,11 +66,12 @@ int32_t sdsRecClose (sdsRecId_t id);
   \fn          uint32_t sdsRecWrite (sdsRecId_t id, const void *buf, uint32_t buf_size)
   \brief       Write data to recorder stream.
   \param[in]   id             \ref sdsRecId_t
+  \param[in]   timestamp      record timestamp in millisec
   \param[in]   buf            pointer to buffer with data to write
   \param[in]   buf_size       buffer size in bytes
-  \return      number of bytes written
+  \return      number of data bytes written
 */
-uint32_t sdsRecWrite (sdsRecId_t id, const void *buf, uint32_t buf_size);
+uint32_t sdsRecWrite (sdsRecId_t id, uint32_t timestamp, const void *buf, uint32_t buf_size);
 
 #ifdef  __cplusplus
 }

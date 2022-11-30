@@ -49,10 +49,10 @@ int32_t sdsPlayUninit (void);
   \param[in]   name           stream name (pointer to NULL terminated string)
   \param[in]   buf            pointer to buffer for stream
   \param[in]   buf_size       buffer size in bytes
-  \param[in]   record_size    record size in bytes
+  \param[in]   io_threshold   threshold in bytes to trigger I/O read (when below threshold)
   \return      \ref sdsPlayId_t
 */
-sdsPlayId_t sdsPlayOpen (const char *name, void *buf, uint32_t buf_size, uint32_t record_size);
+sdsPlayId_t sdsPlayOpen (const char *name, void *buf, uint32_t buf_size, uint32_t io_threshold);
 
 /**
   \fn          int32_t sdsPlayClose (sdsPlayId_t id)
@@ -66,11 +66,12 @@ int32_t sdsPlayClose (sdsPlayId_t id);
   \fn          uint32_t sdsPlayRead (sdsPlayId_t id, void *buf, uint32_t buf_size)
   \brief       Write data to Player stream.
   \param[in]   id             \ref sdsPlayId_t
+  \param[out]  timestamp      pointer to buffer for record timestamp in millisec
   \param[out]  buf            pointer to buffer for data to read
   \param[in]   buf_size       buffer size in bytes
-  \return      number of bytes read
+  \return      number of data bytes read
 */
-uint32_t sdsPlayRead (sdsPlayId_t id, void *buf, uint32_t buf_size);
+uint32_t sdsPlayRead (sdsPlayId_t id, uint32_t *timestamp, void *buf, uint32_t buf_size);
 
 #ifdef  __cplusplus
 }
