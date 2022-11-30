@@ -224,6 +224,7 @@ void __NO_RETURN demo(void) {
         printf("Button pressed\r\n");
 
         if (sensorGetStatus(sensorId_accelerometer).active == 0U) {
+          sdsClear(sdsId_accelerometer);
 #ifdef RECORDER_ENABLED
           // Open Recorder
           recId_accelerometer = sdsRecOpen("Accelerometer",
@@ -244,6 +245,7 @@ void __NO_RETURN demo(void) {
         }
 
         if (sensorGetStatus(sensorId_temperatureSensor).active == 0U) {
+          sdsClear(sdsId_temperatureSensor);
 #ifdef RECORDER_ENABLED
           // Open Recorder;
           recId_temperatureSensor = sdsRecOpen("Temperature",
@@ -265,8 +267,7 @@ void __NO_RETURN demo(void) {
       }
 
       // Accelerometer data event
-      if (((flags & EVENT_DATA_ACCELEROMETER) != 0U) &&
-          (sensorGetStatus(sensorId_accelerometer).active != 0U)) {
+      if ((flags & EVENT_DATA_ACCELEROMETER) != 0U) {
 
         for (n = 0U; n < (SDS_THRESHOLD_ACCELEROMETER / sensorConfig_accelerometer->sample_size); n++) {
           num = sdsRead(sdsId_accelerometer, buf, sensorConfig_accelerometer->sample_size);
@@ -274,12 +275,11 @@ void __NO_RETURN demo(void) {
             printf("%s: x=%i, y=%i, z=%i\r\n",sensorConfig_accelerometer->name,
                                               data_u16[0], data_u16[1], data_u16[2]);
           }
-      }
+        }
       }
 
       // Temperature sensor data event
-      if (((flags & EVENT_DATA_TEMPERATURE_SENSOR) != 0U) &&
-          (sensorGetStatus(sensorId_temperatureSensor).active != 0U)) {
+      if ((flags & EVENT_DATA_TEMPERATURE_SENSOR) != 0U) {
 
         for (n = 0U; n < (SDS_THRESHOLD_TEMPERATURE_SENSOR / sensorConfig_temperatureSensor->sample_size); n++) {
           num = sdsRead(sdsId_temperatureSensor, buf, sensorConfig_temperatureSensor->sample_size);
