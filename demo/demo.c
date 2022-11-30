@@ -206,7 +206,7 @@ void __NO_RETURN demo(void) {
 
 #ifdef RECORDER_ENABLED
   // Initialize recorder
-  sdsRecInit();
+  sdsRecInit(NULL);
 #endif
 
   // Create sensor thread
