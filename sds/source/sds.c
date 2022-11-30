@@ -183,6 +183,24 @@ uint32_t sdsRead (sdsId_t id, void *buf, uint32_t buf_size) {
   return num;
 }
 
+// Clear stream data
+int32_t sdsClear (sdsId_t id) {
+  sds_t *stream = id;
+  uint32_t cnt_used, cnt_limit;
+
+  cnt_used = stream->cnt_in - stream->cnt_out;
+  cnt_limit = stream->buf_size - stream->idx_out;
+  if (cnt_used > cnt_limit) {
+    // buffer rollover
+    stream->idx_out = cnt_used - cnt_limit;
+  } else {
+    stream->idx_out += cnt_used;
+  }
+  stream->cnt_out += cnt_used;
+
+  return SDS_OK;
+}
+
 // Get data count in stream
 uint32_t sdsGetCount (sdsId_t id) {
   sds_t *stream = id;
