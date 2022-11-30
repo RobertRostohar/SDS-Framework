@@ -21,12 +21,20 @@ typedef void *sdsRecId_t;
 #define SDS_REC_OK              (0)         ///< Operation completed successfully
 #define SDS_REC_ERROR           (-1)        ///< Operation failed
 
+/// Events
+#define SDS_REC_EVENT_IO_ERROR  (1UL << 0)  ///< I/O Error
+#define SDS_REC_EVENT_DATA_LOST (1UL << 1)  ///< Data lost
+
+/// Event callback function
+typedef void (*sdsRecEvent_t) (sdsRecId_t id, uint32_t event);
+
 /**
   \fn          int32_t sdsRecInit (void)
   \brief       Initialize recorder.
+  \param[in]   event_cb       pointer to \ref sdsRecEvent_t
   \return      return code
 */
-int32_t sdsRecInit (void);
+int32_t sdsRecInit (sdsRecEvent_t event_cb);
 
 /**
   \fn          int32_t sdsRecUninit (void)

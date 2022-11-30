@@ -150,8 +150,9 @@ static __NO_RETURN void sdsRecThread (void *arg) {
 // SDS Recorder functions
 
 // Initialize recorder
-int32_t sdsRecInit (void) {
+int32_t sdsRecInit (sdsRecEvent_t event_cb) {
   int32_t ret = SDS_REC_ERROR;
+  (void)event_cb;  // Not yet supported
 
   memset(pRecStreams, 0, sizeof(pRecStreams));
 

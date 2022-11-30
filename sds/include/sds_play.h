@@ -21,12 +21,20 @@ typedef void *sdsPlayId_t;
 #define SDS_PLAY_OK             (0)         ///< Operation completed successfully
 #define SDS_PLAY_ERROR          (-1)        ///< Operation failed
 
+/// Events
+#define SDS_PLAY_EVENT_IO_ERROR  (1UL << 0) ///< I/O Error
+#define SDS_PLAY_EVENT_DATA_LOST (1UL << 1) ///< Data lost
+
+/// Event callback function
+typedef void (*sdsPlayEvent_t) (sdsPlayId_t id, uint32_t event);
+
 /**
   \fn          int32_t sdsPlayInit (void)
   \brief       Initialize player.
+  \param[in]   event_cb       pointer to \ref sdsPlayEvent_t
   \return      return code
 */
-int32_t sdsPlayInit (void);
+int32_t sdsPlayInit (sdsPlayEvent_t event_cb);
 
 /**
   \fn          int32_t sdsPlayUninit (void)
