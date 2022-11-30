@@ -43,5 +43,5 @@ The following reference implementation is provided in [sensor_drv.c](source/sens
 It features:
 - support for up to 8 sensors
 - common driver implementation with:
-  - hardware configuration specified in `sensor_config.h`
+  - hardware configuration specified in [sensor_config.h](template/sensor_config.h)
   - hardware interface specified in [sensor_drv_hw.h](include/sensor_drv_hw.h)
