@@ -27,6 +27,7 @@ The API is defined in [sds.h](include/sds.h). It features the following function
 - `sdsRead`: Reads data from the specified stream and returns the number of bytes read. 
   Optional callback with event `SDS_EVENT_DATA_LOW` is executed at the end when number of bytes 
   in the stream is below the configured threshold.
+- `sdsClear`: Clears data in specified stream.
 - `sdsGetCount`: Gets the number of bytes in the stream.
 
 Function calls shall be non-blocking and thread-safe.
