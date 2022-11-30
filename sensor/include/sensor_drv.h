@@ -20,12 +20,20 @@ typedef void *sensorId_t;
 /// Configuration
 typedef const struct {
   char    *name;                            ///< Sensor name
+  uint32_t dma_mode;                        ///< DMA mode: 1=DMA, 0=non-DMA (FIFO)
   uint32_t sample_size;                     ///< Sample size in bytes
-  uint32_t sample_interval;                 ///< Sample interval in microseconds
-  uint32_t data_threshold;                  ///< Data event threshold in number of samples
-  uint32_t fifo_size;                       ///< Sample FIFO size in bytes
-  uint32_t block_size;                      ///< Block size in bytes
-  uint32_t block_num;                       ///< Number of blocks
+  union {
+    struct {
+      uint32_t sample_interval;             ///< Sample interval in microseconds
+      uint32_t fifo_size;                   ///< Sample FIFO size in bytes
+      uint32_t data_threshold;              ///< Data event threshold in number of samples
+    } fifo;
+    struct {
+      uint32_t block_interval;              ///< Block interval in microseconds
+      uint32_t block_size;                  ///< Block size in bytes
+      uint32_t block_num;                   ///< Number of blocks
+    } dma;
+  } u;
 } sensorConfig_t;
 
 /// Status

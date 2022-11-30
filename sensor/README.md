@@ -14,17 +14,22 @@ The API is defined in [sensor_drv.h](include/sensor_drv.h). It features the foll
   Pre-configured sensor are exposed through their names.
 - `sensorGetConfig`: Get configuration of a specified sensor.  
   Sensor configuration is exported in the `sensorConfig_t` structure:
+  - `name`: Sensor name.
+  - `dma_mode`: DMA mode: 1=DMA, 0=non-DMA (FIFO).
   - `sample_size`: Sample size in bytes.
-  - `sample_interval`: Sample interval in microseconds.
-  - `data_threshold`: Data event threshold in number of samples/blocks.  
-    It specifies when the callback with event `SENSOR_EVENT_DATA` is generated. 
-    No event is generated when 0 is specified. 
-    For non-DMA operation the event is generated when the number of samples in the FIFO 
-    reaches the specified number of samples. 
-    For DMA operation the event is generated every time the specified number of blocks is captured.
-  - `fifo_size`: Sample FIFO size in bytes for non-DMA mode (0 when non-DMA mode is not supported).
-  - `block_size`: Block size in bytes for DMA mode (0 when DMA mode is not supported).
-  - `block_num`: Number of blocks for DMA mode (0 when DMA mode is not supported).
+  - `u.fifo` structure in non-DMA mode (FIFO):
+    - `sample_interval`: Sample interval in microseconds.
+    - `fifo_size`: Sample FIFO size in bytes.
+    - `data_threshold`: Data event threshold in number of samples.  
+      It specifies when the callback with event `SENSOR_EVENT_DATA` is generated. 
+      No event is generated when 0 is specified. 
+      The event is generated when the number of samples in the FIFO 
+      reaches the specified number of samples. 
+  - `u.dma` structure in DMA mode:
+    - `block_interval`: Block interval in microseconds.
+    - `block_size`: Block size in bytes for DMA mode.
+    - `block_num`: Number of blocks for DMA mode.
+    >Note: Event `SENSOR_EVENT_DATA` is generated on every block captured.
 - `sensorRegisterEvents`: Registers an event callback function for the specified sensor with event mask.
 - `sensorEnable`: Enables a specified sensor (start capturing data with implicit data flush).
 - `sensorDisable`: Disables a specified sensor (stop capturing data).

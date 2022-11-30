@@ -52,13 +52,23 @@
 // Sensor0 using VSI0
 #ifdef SENSOR0_NAME
 
+#if (SENSOR0_DMA_MODE == 0U)
+#if (SENSOR0_FIFO_SIZE == 0U)
+#error "Sensor0: Invalid FIFO Size!
+#endif
+#else
+#if (SENSOR0_BLOCK_NUM == 0U) || (SENSOR0_BLOCK_SIZE == 0U)
+#error "Sensor0: Invalid Block Configuration!
+#endif
+#endif
+
 // Registered event variables
 static sensorId_t    SensorId_0;
 static sensorEvent_t EventFunc_0 = NULL;
 static uint32_t      EventMask_0 = 0U;
 
 // Block memory
-#if (SENSOR0_BLOCK_NUM != 0U) && (SENSOR0_BLOCK_SIZE != 0U)
+#if (SENSOR0_DMA_MODE != 0U)
 static uint8_t       BlockMem_0[SENSOR0_BLOCK_NUM][SENSOR0_BLOCK_SIZE];
 static uint32_t      BlockCnt_0 = 0U;
 #endif
@@ -144,7 +154,7 @@ static int32_t RegisterEvents_0 (sensorId_t id, sensorEvent_t event_cb, uint32_t
 static int32_t Enable_0 (void) {
   int32_t ret = SENSOR_ERROR;
 
-  #if   (SENSOR0_FIFO_SIZE != 0U)
+  #if (SENSOR0_DMA_MODE == 0U)
     ARM_VSI0->SAMPLE_SIZE    = SENSOR0_SAMPLE_SIZE;
     ARM_VSI0->DATA_THRESHOLD = SENSOR0_DATA_THRESHOLD;
     ARM_VSI0->FIFO_SIZE      = SENSOR0_FIFO_SIZE;
@@ -156,7 +166,7 @@ static int32_t Enable_0 (void) {
                              #endif
                                ARM_VSI_Timer_Run_Msk;
     ret = SENSOR_OK;
-  #elif (SENSOR0_BLOCK_NUM != 0U) && (SENSOR0_BLOCK_SIZE != 0U)
+  #else
     ARM_VSI0->CONTROL        = CONTROL_ENABLE_Msk |
                                CONTROL_DMA_Msk;
     BlockCnt_0               = 0U;
@@ -165,8 +175,7 @@ static int32_t Enable_0 (void) {
     ARM_VSI0->DMA.BlockSize  = SENSOR0_BLOCK_SIZE;
     ARM_VSI0->DMA.Control    = ARM_VSI_DMA_Direction_P2M |
                                ARM_VSI_DMA_Enable_Msk;
-    ARM_VSI0->Timer.Interval = SENSOR0_SAMPLE_INTERVAL *
-                              (SENSOR0_BLOCK_SIZE / SENSOR0_SAMPLE_SIZE);
+    ARM_VSI0->Timer.Interval = SENSOR0_BLOCK_INTERVAL;
     ARM_VSI0->Timer.Control  = ARM_VSI_Timer_Periodic_Msk |
                                ARM_VSI_Timer_Trig_DMA_Msk |
                                ARM_VSI_Timer_Trig_IRQ_Msk |
@@ -180,10 +189,10 @@ static int32_t Enable_0 (void) {
 // Disable sensor
 static int32_t Disable_0 (void) {
 
-  #if   (SENSOR0_FIFO_SIZE != 0U)
+  #if (SENSOR0_DMA_MODE == 0U)
     ARM_VSI0->Timer.Control  = 0U;
     ARM_VSI0->CONTROL        = 0U;
-  #elif (SENSOR0_BLOCK_NUM != 0U) && (SENSOR0_BLOCK_SIZE != 0U)
+  #else
     ARM_VSI0->Timer.Control  = 0U;
     ARM_VSI0->DMA.Control    = 0U;
     ARM_VSI0->CONTROL        = 0U;
@@ -198,7 +207,7 @@ static uint32_t GetOverflow_0 (void) {
 }
 
 // Read samples from sensor
-#if (SENSOR0_FIFO_SIZE != 0U)
+#if (SENSOR0_DMA_MODE == 0U)
 static uint32_t ReadSamples_0 (uint32_t num_samples, void *buf) {
   uint32_t num;
   uint32_t n, m;
@@ -221,7 +230,7 @@ static uint32_t ReadSamples_0 (uint32_t num_samples, void *buf) {
 #endif
 
 // Get block data
-#if (SENSOR0_BLOCK_NUM != 0U) && (SENSOR0_BLOCK_SIZE != 0U)
+#if (SENSOR0_DMA_MODE != 0U)
 static void * GetBlockData_0 (void) {
   void *p = NULL;
 
@@ -240,12 +249,12 @@ sensorDrvHW_t sensorDrvHW_0 = {
   Enable_0,
   Disable_0,
   GetOverflow_0,
-#if (SENSOR0_FIFO_SIZE != 0U)
+#if (SENSOR0_DMA_MODE == 0U)
   ReadSamples_0,
 #else
   NULL,
 #endif
-#if (SENSOR0_BLOCK_NUM != 0U) && (SENSOR0_BLOCK_SIZE != 0U)
+#if (SENSOR0_DMA_MODE != 0U)
   GetBlockData_0
 #else
   NULL
@@ -258,13 +267,23 @@ sensorDrvHW_t sensorDrvHW_0 = {
 // Sensor1 using VSI1
 #ifdef SENSOR1_NAME
 
+#if (SENSOR1_DMA_MODE == 0U)
+#if (SENSOR1_FIFO_SIZE == 0U)
+#error "Sensor1: Invalid FIFO Size!
+#endif
+#else
+#if (SENSOR1_BLOCK_NUM == 0U) || (SENSOR1_BLOCK_SIZE == 0U)
+#error "Sensor1: Invalid Block Configuration!
+#endif
+#endif
+
 // Registered event variables
 static sensorId_t    SensorId_1;
 static sensorEvent_t EventFunc_1 = NULL;
 static uint32_t      EventMask_1 = 0U;
 
 // Block memory
-#if (SENSOR1_BLOCK_NUM != 0U) && (SENSOR1_BLOCK_SIZE != 0U)
+#if (SENSOR1_DMA_MODE != 0U)
 static uint8_t       BlockMem_1[SENSOR1_BLOCK_NUM][SENSOR1_BLOCK_SIZE];
 static uint32_t      BlockCnt_1 = 0U;
 #endif
@@ -350,7 +369,7 @@ static int32_t RegisterEvents_1 (sensorId_t id, sensorEvent_t event_cb, uint32_t
 static int32_t Enable_1 (void) {
   int32_t ret = SENSOR_ERROR;
 
-  #if   (SENSOR1_FIFO_SIZE != 0U)
+  #if (SENSOR1_DMA_MODE == 0U)
     ARM_VSI1->SAMPLE_SIZE    = SENSOR1_SAMPLE_SIZE;
     ARM_VSI1->DATA_THRESHOLD = SENSOR1_DATA_THRESHOLD;
     ARM_VSI1->FIFO_SIZE      = SENSOR1_FIFO_SIZE;
@@ -362,7 +381,7 @@ static int32_t Enable_1 (void) {
                              #endif
                                ARM_VSI_Timer_Run_Msk;
     ret = SENSOR_OK;
-  #elif (SENSOR1_BLOCK_NUM != 0U) && (SENSOR1_BLOCK_SIZE != 0U)
+  #else
     ARM_VSI1->CONTROL        = CONTROL_ENABLE_Msk |
                                CONTROL_DMA_Msk;
     BlockCnt_1               = 0U;
@@ -371,8 +390,7 @@ static int32_t Enable_1 (void) {
     ARM_VSI1->DMA.BlockSize  = SENSOR1_BLOCK_SIZE;
     ARM_VSI1->DMA.Control    = ARM_VSI_DMA_Direction_P2M |
                                ARM_VSI_DMA_Enable_Msk;
-    ARM_VSI1->Timer.Interval = SENSOR1_SAMPLE_INTERVAL *
-                              (SENSOR1_BLOCK_SIZE / SENSOR1_SAMPLE_SIZE);
+    ARM_VSI1->Timer.Interval = SENSOR1_BLOCK_INTERVAL;
     ARM_VSI1->Timer.Control  = ARM_VSI_Timer_Periodic_Msk |
                                ARM_VSI_Timer_Trig_DMA_Msk |
                                ARM_VSI_Timer_Trig_IRQ_Msk |
@@ -386,10 +404,10 @@ static int32_t Enable_1 (void) {
 // Disable sensor
 static int32_t Disable_1 (void) {
 
-  #if   (SENSOR1_FIFO_SIZE != 0U)
+  #if (SENSOR1_DMA_MODE == 0U)
     ARM_VSI1->Timer.Control  = 0U;
     ARM_VSI1->CONTROL        = 0U;
-  #elif (SENSOR1_BLOCK_NUM != 0U) && (SENSOR1_BLOCK_SIZE != 0U)
+  #else
     ARM_VSI1->Timer.Control  = 0U;
     ARM_VSI1->DMA.Control    = 0U;
     ARM_VSI1->CONTROL        = 0U;
@@ -404,7 +422,7 @@ static uint32_t GetOverflow_1 (void) {
 }
 
 // Read samples from sensor
-#if (SENSOR1_FIFO_SIZE != 0U)
+#if (SENSOR1_DMA_MODE == 0U)
 static uint32_t ReadSamples_1 (uint32_t num_samples, void *buf) {
   uint32_t num;
   uint32_t n, m;
@@ -427,7 +445,7 @@ static uint32_t ReadSamples_1 (uint32_t num_samples, void *buf) {
 #endif
 
 // Get block data
-#if (SENSOR1_BLOCK_NUM != 0U) && (SENSOR1_BLOCK_SIZE != 0U)
+#if (SENSOR1_DMA_MODE != 0U)
 static void * GetBlockData_1 (void) {
   void *p = NULL;
 
@@ -446,12 +464,12 @@ sensorDrvHW_t sensorDrvHW_1 = {
   Enable_1,
   Disable_1,
   GetOverflow_1,
-#if (SENSOR1_FIFO_SIZE != 0U)
+#if (SENSOR1_DMA_MODE == 0U)
   ReadSamples_1,
 #else
   NULL,
 #endif
-#if (SENSOR1_BLOCK_NUM != 0U) && (SENSOR1_BLOCK_SIZE != 0U)
+#if (SENSOR1_DMA_MODE != 0U)
   GetBlockData_1
 #else
   NULL
@@ -464,13 +482,23 @@ sensorDrvHW_t sensorDrvHW_1 = {
 // Sensor2 using VSI2
 #ifdef SENSOR2_NAME
 
+#if (SENSOR2_DMA_MODE == 0U)
+#if (SENSOR2_FIFO_SIZE == 0U)
+#error "Sensor2: Invalid FIFO Size!
+#endif
+#else
+#if (SENSOR2_BLOCK_NUM == 0U) || (SENSOR2_BLOCK_SIZE == 0U)
+#error "Sensor2: Invalid Block Configuration!
+#endif
+#endif
+
 // Registered event variables
 static sensorId_t    SensorId_2;
 static sensorEvent_t EventFunc_2 = NULL;
 static uint32_t      EventMask_2 = 0U;
 
 // Block memory
-#if (SENSOR2_BLOCK_NUM != 0U) && (SENSOR2_BLOCK_SIZE != 0U)
+#if (SENSOR2_DMA_MODE != 0U)
 static uint8_t       BlockMem_2[SENSOR2_BLOCK_NUM][SENSOR2_BLOCK_SIZE];
 static uint32_t      BlockCnt_2 = 0U;
 #endif
@@ -556,7 +584,7 @@ static int32_t RegisterEvents_2 (sensorId_t id, sensorEvent_t event_cb, uint32_t
 static int32_t Enable_2 (void) {
   int32_t ret = SENSOR_ERROR;
 
-  #if   (SENSOR2_FIFO_SIZE != 0U)
+  #if (SENSOR2_DMA_MODE == 0U)
     ARM_VSI2->SAMPLE_SIZE    = SENSOR2_SAMPLE_SIZE;
     ARM_VSI2->DATA_THRESHOLD = SENSOR2_DATA_THRESHOLD;
     ARM_VSI2->FIFO_SIZE      = SENSOR2_FIFO_SIZE;
@@ -568,7 +596,7 @@ static int32_t Enable_2 (void) {
                              #endif
                                ARM_VSI_Timer_Run_Msk;
     ret = SENSOR_OK;
-  #elif (SENSOR2_BLOCK_NUM != 0U) && (SENSOR2_BLOCK_SIZE != 0U)
+  #else
     ARM_VSI2->CONTROL        = CONTROL_ENABLE_Msk |
                                CONTROL_DMA_Msk;
     BlockCnt_2               = 0U;
@@ -577,8 +605,7 @@ static int32_t Enable_2 (void) {
     ARM_VSI2->DMA.BlockSize  = SENSOR2_BLOCK_SIZE;
     ARM_VSI2->DMA.Control    = ARM_VSI_DMA_Direction_P2M |
                                ARM_VSI_DMA_Enable_Msk;
-    ARM_VSI2->Timer.Interval = SENSOR2_SAMPLE_INTERVAL *
-                              (SENSOR2_BLOCK_SIZE / SENSOR2_SAMPLE_SIZE);
+    ARM_VSI2->Timer.Interval = SENSOR2_BLOCK_INTERVAL;
     ARM_VSI2->Timer.Control  = ARM_VSI_Timer_Periodic_Msk |
                                ARM_VSI_Timer_Trig_DMA_Msk |
                                ARM_VSI_Timer_Trig_IRQ_Msk |
@@ -592,10 +619,10 @@ static int32_t Enable_2 (void) {
 // Disable sensor
 static int32_t Disable_2 (void) {
 
-  #if   (SENSOR2_FIFO_SIZE != 0U)
+  #if (SENSOR2_DMA_MODE == 0U)
     ARM_VSI2->Timer.Control  = 0U;
     ARM_VSI2->CONTROL        = 0U;
-  #elif (SENSOR2_BLOCK_NUM != 0U) && (SENSOR2_BLOCK_SIZE != 0U)
+  #else
     ARM_VSI2->Timer.Control  = 0U;
     ARM_VSI2->DMA.Control    = 0U;
     ARM_VSI2->CONTROL        = 0U;
@@ -610,7 +637,7 @@ static uint32_t GetOverflow_2 (void) {
 }
 
 // Read samples from sensor
-#if (SENSOR2_FIFO_SIZE != 0U)
+#if (SENSOR2_DMA_MODE == 0U)
 static uint32_t ReadSamples_2 (uint32_t num_samples, void *buf) {
   uint32_t num;
   uint32_t n, m;
@@ -633,7 +660,7 @@ static uint32_t ReadSamples_2 (uint32_t num_samples, void *buf) {
 #endif
 
 // Get block data
-#if (SENSOR2_BLOCK_NUM != 0U) && (SENSOR2_BLOCK_SIZE != 0U)
+#if (SENSOR2_DMA_MODE != 0U)
 static void * GetBlockData_2 (void) {
   void *p = NULL;
 
@@ -652,12 +679,12 @@ sensorDrvHW_t sensorDrvHW_2 = {
   Enable_2,
   Disable_2,
   GetOverflow_2,
-#if (SENSOR2_FIFO_SIZE != 0U)
+#if (SENSOR2_DMA_MODE == 0U)
   ReadSamples_2,
 #else
   NULL,
 #endif
-#if (SENSOR2_BLOCK_NUM != 0U) && (SENSOR2_BLOCK_SIZE != 0U)
+#if (SENSOR2_DMA_MODE != 0U)
   GetBlockData_2
 #else
   NULL
@@ -670,13 +697,23 @@ sensorDrvHW_t sensorDrvHW_2 = {
 // Sensor3 using VSI3
 #ifdef SENSOR3_NAME
 
+#if (SENSOR3_DMA_MODE == 0U)
+#if (SENSOR3_FIFO_SIZE == 0U)
+#error "Sensor3: Invalid FIFO Size!
+#endif
+#else
+#if (SENSOR3_BLOCK_NUM == 0U) || (SENSOR3_BLOCK_SIZE == 0U)
+#error "Sensor3: Invalid Block Configuration!
+#endif
+#endif
+
 // Registered event variables
 static sensorId_t    SensorId_3;
 static sensorEvent_t EventFunc_3 = NULL;
 static uint32_t      EventMask_3 = 0U;
 
 // Block memory
-#if (SENSOR3_BLOCK_NUM != 0U) && (SENSOR3_BLOCK_SIZE != 0U)
+#if (SENSOR3_DMA_MODE != 0U)
 static uint8_t       BlockMem_3[SENSOR3_BLOCK_NUM][SENSOR3_BLOCK_SIZE];
 static uint32_t      BlockCnt_3 = 0U;
 #endif
@@ -762,7 +799,7 @@ static int32_t RegisterEvents_3 (sensorId_t id, sensorEvent_t event_cb, uint32_t
 static int32_t Enable_3 (void) {
   int32_t ret = SENSOR_ERROR;
 
-  #if   (SENSOR3_FIFO_SIZE != 0U)
+  #if (SENSOR3_DMA_MODE == 0U)
     ARM_VSI3->SAMPLE_SIZE    = SENSOR3_SAMPLE_SIZE;
     ARM_VSI3->DATA_THRESHOLD = SENSOR3_DATA_THRESHOLD;
     ARM_VSI3->FIFO_SIZE      = SENSOR3_FIFO_SIZE;
@@ -774,7 +811,7 @@ static int32_t Enable_3 (void) {
                              #endif
                                ARM_VSI_Timer_Run_Msk;
     ret = SENSOR_OK;
-  #elif (SENSOR3_BLOCK_NUM != 0U) && (SENSOR3_BLOCK_SIZE != 0U)
+  #else
     ARM_VSI3->CONTROL        = CONTROL_ENABLE_Msk |
                                CONTROL_DMA_Msk;
     BlockCnt_3               = 0U;
@@ -783,8 +820,7 @@ static int32_t Enable_3 (void) {
     ARM_VSI3->DMA.BlockSize  = SENSOR3_BLOCK_SIZE;
     ARM_VSI3->DMA.Control    = ARM_VSI_DMA_Direction_P2M |
                                ARM_VSI_DMA_Enable_Msk;
-    ARM_VSI3->Timer.Interval = SENSOR3_SAMPLE_INTERVAL *
-                              (SENSOR3_BLOCK_SIZE / SENSOR3_SAMPLE_SIZE);
+    ARM_VSI3->Timer.Interval = SENSOR3_BLOCK_INTERVAL;
     ARM_VSI3->Timer.Control  = ARM_VSI_Timer_Periodic_Msk |
                                ARM_VSI_Timer_Trig_DMA_Msk |
                                ARM_VSI_Timer_Trig_IRQ_Msk |
@@ -798,10 +834,10 @@ static int32_t Enable_3 (void) {
 // Disable sensor
 static int32_t Disable_3 (void) {
 
-  #if   (SENSOR3_FIFO_SIZE != 0U)
+  #if (SENSOR3_DMA_MODE == 0U)
     ARM_VSI3->Timer.Control  = 0U;
     ARM_VSI3->CONTROL        = 0U;
-  #elif (SENSOR3_BLOCK_NUM != 0U) && (SENSOR3_BLOCK_SIZE != 0U)
+  #else
     ARM_VSI3->Timer.Control  = 0U;
     ARM_VSI3->DMA.Control    = 0U;
     ARM_VSI3->CONTROL        = 0U;
@@ -816,7 +852,7 @@ static uint32_t GetOverflow_3 (void) {
 }
 
 // Read samples from sensor
-#if (SENSOR3_FIFO_SIZE != 0U)
+#if (SENSOR3_DMA_MODE == 0U)
 static uint32_t ReadSamples_3 (uint32_t num_samples, void *buf) {
   uint32_t num;
   uint32_t n, m;
@@ -839,7 +875,7 @@ static uint32_t ReadSamples_3 (uint32_t num_samples, void *buf) {
 #endif
 
 // Get block data
-#if (SENSOR3_BLOCK_NUM != 0U) && (SENSOR3_BLOCK_SIZE != 0U)
+#if (SENSOR3_DMA_MODE != 0U)
 static void * GetBlockData_3 (void) {
   void *p = NULL;
 
@@ -858,12 +894,12 @@ sensorDrvHW_t sensorDrvHW_3 = {
   Enable_3,
   Disable_3,
   GetOverflow_3,
-#if (SENSOR3_FIFO_SIZE != 0U)
+#if (SENSOR3_DMA_MODE == 0U)
   ReadSamples_3,
 #else
   NULL,
 #endif
-#if (SENSOR3_BLOCK_NUM != 0U) && (SENSOR3_BLOCK_SIZE != 0U)
+#if (SENSOR3_DMA_MODE != 0U)
   GetBlockData_3
 #else
   NULL
@@ -876,13 +912,23 @@ sensorDrvHW_t sensorDrvHW_3 = {
 // Sensor4 using VSI4
 #ifdef SENSOR4_NAME
 
+#if (SENSOR4_DMA_MODE == 0U)
+#if (SENSOR4_FIFO_SIZE == 0U)
+#error "Sensor4: Invalid FIFO Size!
+#endif
+#else
+#if (SENSOR4_BLOCK_NUM == 0U) || (SENSOR4_BLOCK_SIZE == 0U)
+#error "Sensor4: Invalid Block Configuration!
+#endif
+#endif
+
 // Registered event variables
 static sensorId_t    SensorId_4;
 static sensorEvent_t EventFunc_4 = NULL;
 static uint32_t      EventMask_4 = 0U;
 
 // Block memory
-#if (SENSOR4_BLOCK_NUM != 0U) && (SENSOR4_BLOCK_SIZE != 0U)
+#if (SENSOR4_DMA_MODE != 0U)
 static uint8_t       BlockMem_4[SENSOR4_BLOCK_NUM][SENSOR4_BLOCK_SIZE];
 static uint32_t      BlockCnt_4 = 0U;
 #endif
@@ -968,7 +1014,7 @@ static int32_t RegisterEvents_4 (sensorId_t id, sensorEvent_t event_cb, uint32_t
 static int32_t Enable_4 (void) {
   int32_t ret = SENSOR_ERROR;
 
-  #if   (SENSOR4_FIFO_SIZE != 0U)
+  #if (SENSOR4_DMA_MODE == 0U)
     ARM_VSI4->SAMPLE_SIZE    = SENSOR4_SAMPLE_SIZE;
     ARM_VSI4->DATA_THRESHOLD = SENSOR4_DATA_THRESHOLD;
     ARM_VSI4->FIFO_SIZE      = SENSOR4_FIFO_SIZE;
@@ -980,7 +1026,7 @@ static int32_t Enable_4 (void) {
                              #endif
                                ARM_VSI_Timer_Run_Msk;
     ret = SENSOR_OK;
-  #elif (SENSOR4_BLOCK_NUM != 0U) && (SENSOR4_BLOCK_SIZE != 0U)
+  #else
     ARM_VSI4->CONTROL        = CONTROL_ENABLE_Msk |
                                CONTROL_DMA_Msk;
     BlockCnt_4               = 0U;
@@ -989,8 +1035,7 @@ static int32_t Enable_4 (void) {
     ARM_VSI4->DMA.BlockSize  = SENSOR4_BLOCK_SIZE;
     ARM_VSI4->DMA.Control    = ARM_VSI_DMA_Direction_P2M |
                                ARM_VSI_DMA_Enable_Msk;
-    ARM_VSI4->Timer.Interval = SENSOR4_SAMPLE_INTERVAL *
-                              (SENSOR4_BLOCK_SIZE / SENSOR4_SAMPLE_SIZE);
+    ARM_VSI4->Timer.Interval = SENSOR4_BLOCK_INTERVAL;
     ARM_VSI4->Timer.Control  = ARM_VSI_Timer_Periodic_Msk |
                                ARM_VSI_Timer_Trig_DMA_Msk |
                                ARM_VSI_Timer_Trig_IRQ_Msk |
@@ -1004,10 +1049,10 @@ static int32_t Enable_4 (void) {
 // Disable sensor
 static int32_t Disable_4 (void) {
 
-  #if   (SENSOR4_FIFO_SIZE != 0U)
+  #if (SENSOR4_DMA_MODE == 0U)
     ARM_VSI4->Timer.Control  = 0U;
     ARM_VSI4->CONTROL        = 0U;
-  #elif (SENSOR4_BLOCK_NUM != 0U) && (SENSOR4_BLOCK_SIZE != 0U)
+  #else
     ARM_VSI4->Timer.Control  = 0U;
     ARM_VSI4->DMA.Control    = 0U;
     ARM_VSI4->CONTROL        = 0U;
@@ -1022,7 +1067,7 @@ static uint32_t GetOverflow_4 (void) {
 }
 
 // Read samples from sensor
-#if (SENSOR4_FIFO_SIZE != 0U)
+#if (SENSOR4_DMA_MODE == 0U)
 static uint32_t ReadSamples_4 (uint32_t num_samples, void *buf) {
   uint32_t num;
   uint32_t n, m;
@@ -1045,7 +1090,7 @@ static uint32_t ReadSamples_4 (uint32_t num_samples, void *buf) {
 #endif
 
 // Get block data
-#if (SENSOR4_BLOCK_NUM != 0U) && (SENSOR4_BLOCK_SIZE != 0U)
+#if (SENSOR4_DMA_MODE != 0U)
 static void * GetBlockData_4 (void) {
   void *p = NULL;
 
@@ -1064,12 +1109,12 @@ sensorDrvHW_t sensorDrvHW_4 = {
   Enable_4,
   Disable_4,
   GetOverflow_4,
-#if (SENSOR4_FIFO_SIZE != 0U)
+#if (SENSOR4_DMA_MODE == 0U)
   ReadSamples_4,
 #else
   NULL,
 #endif
-#if (SENSOR4_BLOCK_NUM != 0U) && (SENSOR4_BLOCK_SIZE != 0U)
+#if (SENSOR4_DMA_MODE != 0U)
   GetBlockData_4
 #else
   NULL
@@ -1082,13 +1127,23 @@ sensorDrvHW_t sensorDrvHW_4 = {
 // Sensor5 using VSI5
 #ifdef SENSOR5_NAME
 
+#if (SENSOR5_DMA_MODE == 0U)
+#if (SENSOR5_FIFO_SIZE == 0U)
+#error "Sensor5: Invalid FIFO Size!
+#endif
+#else
+#if (SENSOR5_BLOCK_NUM == 0U) || (SENSOR5_BLOCK_SIZE == 0U)
+#error "Sensor5: Invalid Block Configuration!
+#endif
+#endif
+
 // Registered event variables
 static sensorId_t    SensorId_5;
 static sensorEvent_t EventFunc_5 = NULL;
 static uint32_t      EventMask_5 = 0U;
 
 // Block memory
-#if (SENSOR5_BLOCK_NUM != 0U) && (SENSOR5_BLOCK_SIZE != 0U)
+#if (SENSOR5_DMA_MODE != 0U)
 static uint8_t       BlockMem_5[SENSOR5_BLOCK_NUM][SENSOR5_BLOCK_SIZE];
 static uint32_t      BlockCnt_5 = 0U;
 #endif
@@ -1174,7 +1229,7 @@ static int32_t RegisterEvents_5 (sensorId_t id, sensorEvent_t event_cb, uint32_t
 static int32_t Enable_5 (void) {
   int32_t ret = SENSOR_ERROR;
 
-  #if   (SENSOR5_FIFO_SIZE != 0U)
+  #if (SENSOR5_DMA_MODE == 0U)
     ARM_VSI5->SAMPLE_SIZE    = SENSOR5_SAMPLE_SIZE;
     ARM_VSI5->DATA_THRESHOLD = SENSOR5_DATA_THRESHOLD;
     ARM_VSI5->FIFO_SIZE      = SENSOR5_FIFO_SIZE;
@@ -1186,7 +1241,7 @@ static int32_t Enable_5 (void) {
                              #endif
                                ARM_VSI_Timer_Run_Msk;
     ret = SENSOR_OK;
-  #elif (SENSOR5_BLOCK_NUM != 0U) && (SENSOR5_BLOCK_SIZE != 0U)
+  #else
     ARM_VSI5->CONTROL        = CONTROL_ENABLE_Msk |
                                CONTROL_DMA_Msk;
     BlockCnt_5               = 0U;
@@ -1195,8 +1250,7 @@ static int32_t Enable_5 (void) {
     ARM_VSI5->DMA.BlockSize  = SENSOR5_BLOCK_SIZE;
     ARM_VSI5->DMA.Control    = ARM_VSI_DMA_Direction_P2M |
                                ARM_VSI_DMA_Enable_Msk;
-    ARM_VSI5->Timer.Interval = SENSOR5_SAMPLE_INTERVAL *
-                              (SENSOR5_BLOCK_SIZE / SENSOR5_SAMPLE_SIZE);
+    ARM_VSI5->Timer.Interval = SENSOR5_BLOCK_INTERVAL;
     ARM_VSI5->Timer.Control  = ARM_VSI_Timer_Periodic_Msk |
                                ARM_VSI_Timer_Trig_DMA_Msk |
                                ARM_VSI_Timer_Trig_IRQ_Msk |
@@ -1210,10 +1264,10 @@ static int32_t Enable_5 (void) {
 // Disable sensor
 static int32_t Disable_5 (void) {
 
-  #if   (SENSOR5_FIFO_SIZE != 0U)
+  #if (SENSOR5_DMA_MODE == 0U)
     ARM_VSI5->Timer.Control  = 0U;
     ARM_VSI5->CONTROL        = 0U;
-  #elif (SENSOR5_BLOCK_NUM != 0U) && (SENSOR5_BLOCK_SIZE != 0U)
+  #else
     ARM_VSI5->Timer.Control  = 0U;
     ARM_VSI5->DMA.Control    = 0U;
     ARM_VSI5->CONTROL        = 0U;
@@ -1228,7 +1282,7 @@ static uint32_t GetOverflow_5 (void) {
 }
 
 // Read samples from sensor
-#if (SENSOR5_FIFO_SIZE != 0U)
+#if (SENSOR5_DMA_MODE == 0U)
 static uint32_t ReadSamples_5 (uint32_t num_samples, void *buf) {
   uint32_t num;
   uint32_t n, m;
@@ -1251,7 +1305,7 @@ static uint32_t ReadSamples_5 (uint32_t num_samples, void *buf) {
 #endif
 
 // Get block data
-#if (SENSOR5_BLOCK_NUM != 0U) && (SENSOR5_BLOCK_SIZE != 0U)
+#if (SENSOR5_DMA_MODE != 0U)
 static void * GetBlockData_5 (void) {
   void *p = NULL;
 
@@ -1270,12 +1324,12 @@ sensorDrvHW_t sensorDrvHW_5 = {
   Enable_5,
   Disable_5,
   GetOverflow_5,
-#if (SENSOR5_FIFO_SIZE != 0U)
+#if (SENSOR5_DMA_MODE == 0U)
   ReadSamples_5,
 #else
   NULL,
 #endif
-#if (SENSOR5_BLOCK_NUM != 0U) && (SENSOR5_BLOCK_SIZE != 0U)
+#if (SENSOR5_DMA_MODE != 0U)
   GetBlockData_5
 #else
   NULL
@@ -1288,13 +1342,23 @@ sensorDrvHW_t sensorDrvHW_5 = {
 // Sensor6 using VSI6
 #ifdef SENSOR6_NAME
 
+#if (SENSOR6_DMA_MODE == 0U)
+#if (SENSOR6_FIFO_SIZE == 0U)
+#error "Sensor6: Invalid FIFO Size!
+#endif
+#else
+#if (SENSOR6_BLOCK_NUM == 0U) || (SENSOR6_BLOCK_SIZE == 0U)
+#error "Sensor6: Invalid Block Configuration!
+#endif
+#endif
+
 // Registered event variables
 static sensorId_t    SensorId_6;
 static sensorEvent_t EventFunc_6 = NULL;
 static uint32_t      EventMask_6 = 0U;
 
 // Block memory
-#if (SENSOR6_BLOCK_NUM != 0U) && (SENSOR6_BLOCK_SIZE != 0U)
+#if (SENSOR6_DMA_MODE != 0U)
 static uint8_t       BlockMem_6[SENSOR6_BLOCK_NUM][SENSOR6_BLOCK_SIZE];
 static uint32_t      BlockCnt_6 = 0U;
 #endif
@@ -1380,7 +1444,7 @@ static int32_t RegisterEvents_6 (sensorId_t id, sensorEvent_t event_cb, uint32_t
 static int32_t Enable_6 (void) {
   int32_t ret = SENSOR_ERROR;
 
-  #if   (SENSOR6_FIFO_SIZE != 0U)
+  #if (SENSOR6_DMA_MODE == 0U)
     ARM_VSI6->SAMPLE_SIZE    = SENSOR6_SAMPLE_SIZE;
     ARM_VSI6->DATA_THRESHOLD = SENSOR6_DATA_THRESHOLD;
     ARM_VSI6->FIFO_SIZE      = SENSOR6_FIFO_SIZE;
@@ -1392,7 +1456,7 @@ static int32_t Enable_6 (void) {
                              #endif
                                ARM_VSI_Timer_Run_Msk;
     ret = SENSOR_OK;
-  #elif (SENSOR6_BLOCK_NUM != 0U) && (SENSOR6_BLOCK_SIZE != 0U)
+  #else
     ARM_VSI6->CONTROL        = CONTROL_ENABLE_Msk |
                                CONTROL_DMA_Msk;
     BlockCnt_6               = 0U;
@@ -1401,8 +1465,7 @@ static int32_t Enable_6 (void) {
     ARM_VSI6->DMA.BlockSize  = SENSOR6_BLOCK_SIZE;
     ARM_VSI6->DMA.Control    = ARM_VSI_DMA_Direction_P2M |
                                ARM_VSI_DMA_Enable_Msk;
-    ARM_VSI6->Timer.Interval = SENSOR6_SAMPLE_INTERVAL *
-                              (SENSOR6_BLOCK_SIZE / SENSOR6_SAMPLE_SIZE);
+    ARM_VSI6->Timer.Interval = SENSOR6_BLOCK_INTERVAL;
     ARM_VSI6->Timer.Control  = ARM_VSI_Timer_Periodic_Msk |
                                ARM_VSI_Timer_Trig_DMA_Msk |
                                ARM_VSI_Timer_Trig_IRQ_Msk |
@@ -1416,10 +1479,10 @@ static int32_t Enable_6 (void) {
 // Disable sensor
 static int32_t Disable_6 (void) {
 
-  #if   (SENSOR6_FIFO_SIZE != 0U)
+  #if (SENSOR6_DMA_MODE == 0U)
     ARM_VSI6->Timer.Control  = 0U;
     ARM_VSI6->CONTROL        = 0U;
-  #elif (SENSOR6_BLOCK_NUM != 0U) && (SENSOR6_BLOCK_SIZE != 0U)
+  #else
     ARM_VSI6->Timer.Control  = 0U;
     ARM_VSI6->DMA.Control    = 0U;
     ARM_VSI6->CONTROL        = 0U;
@@ -1434,7 +1497,7 @@ static uint32_t GetOverflow_6 (void) {
 }
 
 // Read samples from sensor
-#if (SENSOR6_FIFO_SIZE != 0U)
+#if (SENSOR6_DMA_MODE == 0U)
 static uint32_t ReadSamples_6 (uint32_t num_samples, void *buf) {
   uint32_t num;
   uint32_t n, m;
@@ -1457,7 +1520,7 @@ static uint32_t ReadSamples_6 (uint32_t num_samples, void *buf) {
 #endif
 
 // Get block data
-#if (SENSOR6_BLOCK_NUM != 0U) && (SENSOR6_BLOCK_SIZE != 0U)
+#if (SENSOR6_DMA_MODE != 0U)
 static void * GetBlockData_6 (void) {
   void *p = NULL;
 
@@ -1476,12 +1539,12 @@ sensorDrvHW_t sensorDrvHW_6 = {
   Enable_6,
   Disable_6,
   GetOverflow_6,
-#if (SENSOR6_FIFO_SIZE != 0U)
+#if (SENSOR6_DMA_MODE == 0U)
   ReadSamples_6,
 #else
   NULL,
 #endif
-#if (SENSOR6_BLOCK_NUM != 0U) && (SENSOR6_BLOCK_SIZE != 0U)
+#if (SENSOR6_DMA_MODE != 0U)
   GetBlockData_6
 #else
   NULL
@@ -1494,13 +1557,23 @@ sensorDrvHW_t sensorDrvHW_6 = {
 // Sensor7 using VSI7
 #ifdef SENSOR7_NAME
 
+#if (SENSOR7_DMA_MODE == 0U)
+#if (SENSOR7_FIFO_SIZE == 0U)
+#error "Sensor7: Invalid FIFO Size!
+#endif
+#else
+#if (SENSOR7_BLOCK_NUM == 0U) || (SENSOR7_BLOCK_SIZE == 0U)
+#error "Sensor7: Invalid Block Configuration!
+#endif
+#endif
+
 // Registered event variables
 static sensorId_t    SensorId_7;
 static sensorEvent_t EventFunc_7 = NULL;
 static uint32_t      EventMask_7 = 0U;
 
 // Block memory
-#if (SENSOR7_BLOCK_NUM != 0U) && (SENSOR7_BLOCK_SIZE != 0U)
+#if (SENSOR7_DMA_MODE != 0U)
 static uint8_t       BlockMem_7[SENSOR7_BLOCK_NUM][SENSOR7_BLOCK_SIZE];
 static uint32_t      BlockCnt_7 = 0U;
 #endif
@@ -1586,7 +1659,7 @@ static int32_t RegisterEvents_7 (sensorId_t id, sensorEvent_t event_cb, uint32_t
 static int32_t Enable_7 (void) {
   int32_t ret = SENSOR_ERROR;
 
-  #if   (SENSOR7_FIFO_SIZE != 0U)
+  #if (SENSOR7_DMA_MODE == 0U)
     ARM_VSI7->SAMPLE_SIZE    = SENSOR7_SAMPLE_SIZE;
     ARM_VSI7->DATA_THRESHOLD = SENSOR7_DATA_THRESHOLD;
     ARM_VSI7->FIFO_SIZE      = SENSOR7_FIFO_SIZE;
@@ -1598,7 +1671,7 @@ static int32_t Enable_7 (void) {
                              #endif
                                ARM_VSI_Timer_Run_Msk;
     ret = SENSOR_OK;
-  #elif (SENSOR7_BLOCK_NUM != 0U) && (SENSOR7_BLOCK_SIZE != 0U)
+  #else
     ARM_VSI7->CONTROL        = CONTROL_ENABLE_Msk |
                                CONTROL_DMA_Msk;
     BlockCnt_7               = 0U;
@@ -1607,8 +1680,7 @@ static int32_t Enable_7 (void) {
     ARM_VSI7->DMA.BlockSize  = SENSOR7_BLOCK_SIZE;
     ARM_VSI7->DMA.Control    = ARM_VSI_DMA_Direction_P2M |
                                ARM_VSI_DMA_Enable_Msk;
-    ARM_VSI7->Timer.Interval = SENSOR7_SAMPLE_INTERVAL *
-                              (SENSOR7_BLOCK_SIZE / SENSOR7_SAMPLE_SIZE);
+    ARM_VSI7->Timer.Interval = SENSOR7_BLOCK_INTERVAL;
     ARM_VSI7->Timer.Control  = ARM_VSI_Timer_Periodic_Msk |
                                ARM_VSI_Timer_Trig_DMA_Msk |
                                ARM_VSI_Timer_Trig_IRQ_Msk |
@@ -1622,10 +1694,10 @@ static int32_t Enable_7 (void) {
 // Disable sensor
 static int32_t Disable_7 (void) {
 
-  #if   (SENSOR7_FIFO_SIZE != 0U)
+  #if (SENSOR7_DMA_MODE == 0U)
     ARM_VSI7->Timer.Control  = 0U;
     ARM_VSI7->CONTROL        = 0U;
-  #elif (SENSOR7_BLOCK_NUM != 0U) && (SENSOR7_BLOCK_SIZE != 0U)
+  #else
     ARM_VSI7->Timer.Control  = 0U;
     ARM_VSI7->DMA.Control    = 0U;
     ARM_VSI7->CONTROL        = 0U;
@@ -1640,7 +1712,7 @@ static uint32_t GetOverflow_7 (void) {
 }
 
 // Read samples from sensor
-#if (SENSOR7_FIFO_SIZE != 0U)
+#if (SENSOR7_DMA_MODE == 0U)
 static uint32_t ReadSamples_7 (uint32_t num_samples, void *buf) {
   uint32_t num;
   uint32_t n, m;
@@ -1663,7 +1735,7 @@ static uint32_t ReadSamples_7 (uint32_t num_samples, void *buf) {
 #endif
 
 // Get block data
-#if (SENSOR7_BLOCK_NUM != 0U) && (SENSOR7_BLOCK_SIZE != 0U)
+#if (SENSOR7_DMA_MODE != 0U)
 static void * GetBlockData_7 (void) {
   void *p = NULL;
 
@@ -1682,12 +1754,12 @@ sensorDrvHW_t sensorDrvHW_7 = {
   Enable_7,
   Disable_7,
   GetOverflow_7,
-#if (SENSOR7_FIFO_SIZE != 0U)
+#if (SENSOR7_DMA_MODE == 0U)
   ReadSamples_7,
 #else
   NULL,
 #endif
-#if (SENSOR7_BLOCK_NUM != 0U) && (SENSOR7_BLOCK_SIZE != 0U)
+#if (SENSOR7_DMA_MODE != 0U)
   GetBlockData_7
 #else
   NULL
