@@ -50,6 +50,9 @@ static uint8_t   RecBuf[SDS_REC_MAX_RECORD_SIZE + SDSIO_HEADER_SIZE + SDSIO_TAIL
 static uint8_t *pRecBuf = &RecBuf[SDSIO_HEADER_SIZE];
 #endif
 
+// Event callback
+static sdsRecEvent_t sdsRecEvent = NULL;
+
 // Thread Id
 static osThreadId_t sdsRecThreadId;
 
@@ -137,7 +140,11 @@ static __NO_RETURN void sdsRecThread (void *arg) {
           if (rec != NULL) {
             while (sdsGetCount(rec->stream) >= rec->record_size) {
               cnt = sdsRead(rec->stream, pRecBuf, rec->record_size);
-              sdsioWrite(rec->sdsio, pRecBuf, cnt);
+              if (sdsioWrite(rec->sdsio, pRecBuf, cnt) != cnt) {
+                if (sdsRecEvent != NULL) {
+                  sdsRecEvent(rec, SDS_REC_EVENT_IO_ERROR);
+                }
+              }
             }
           }
         }
@@ -152,13 +159,13 @@ static __NO_RETURN void sdsRecThread (void *arg) {
 // Initialize recorder
 int32_t sdsRecInit (sdsRecEvent_t event_cb) {
   int32_t ret = SDS_REC_ERROR;
-  (void)event_cb;  // Not yet supported
 
   memset(pRecStreams, 0, sizeof(pRecStreams));
 
   sdsRecLockCreate();
   sdsRecThreadId = osThreadNew(sdsRecThread, NULL, NULL);
   if (sdsRecThreadId != NULL)  {
+    sdsRecEvent = event_cb;
     ret = SDS_OK;
   }
   return ret;
@@ -170,6 +177,7 @@ int32_t sdsRecUninit (void) {
 
   sdsRecLock();
   osThreadTerminate(sdsRecThreadId);
+  sdsRecEvent = NULL;
   sdsRecUnLock();
   sdsRecLockDelete();
 
@@ -181,7 +189,9 @@ sdsRecId_t sdsRecOpen (const char *name, void *buf, uint32_t buf_size, uint32_t 
   sdsRec_t *rec = NULL;
   uint32_t index;
 
-  if ((name != NULL) && (buf != NULL) && (buf_size != 0U) && (record_size != 0U)) {
+  if ((name != NULL) && (buf != NULL) && (buf_size != 0U) &&
+      (record_size != 0U) && (record_size <= SDS_REC_MAX_RECORD_SIZE)) {
+
     sdsRecLock();
     rec = sdsRecAlloc(&index);
     if (rec != NULL) {
