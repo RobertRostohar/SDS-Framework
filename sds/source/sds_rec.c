@@ -33,13 +33,20 @@
 
 // Control block
 typedef struct {
-  uint32_t    record_size;
+  uint32_t    buf_size;
+  uint32_t    flag_mask;
   sdsId_t     stream;
   sdsioId_t   sdsio;
 } sdsRec_t;
 
 static sdsRec_t   RecStreams[SDS_REC_MAX_STREAMS] = {0};
 static sdsRec_t *pRecStreams[SDS_REC_MAX_STREAMS] = {NULL};
+
+// Record header
+typedef struct {
+  uint32_t    timestamp;        // Timestamp in milliseconds
+  uint32_t    data_size;        // Data size in bytes
+} RecHead_t;
 
 // Record buffer
 #ifndef SDSIO_NO_BUFFER
@@ -127,6 +134,7 @@ static void sdsRecEventCallback (sdsId_t id, uint32_t event, void *arg) {
 static __NO_RETURN void sdsRecThread (void *arg) {
   sdsRec_t *rec;
   uint32_t flags, cnt, n;
+  uint32_t event = 0U;
 
   (void)arg;
 
@@ -138,13 +146,18 @@ static __NO_RETURN void sdsRecThread (void *arg) {
         if (flags & (1U << n)) {
           rec = pRecStreams[n];
           if (rec != NULL) {
-            while (sdsGetCount(rec->stream) >= rec->record_size) {
-              cnt = sdsRead(rec->stream, pRecBuf, rec->record_size);
+            cnt = sdsGetCount(rec->stream);
+            if (cnt <= sizeof(RecBuf)) {
+              cnt = sdsRead(rec->stream, pRecBuf, cnt);
               if (sdsioWrite(rec->sdsio, pRecBuf, cnt) != cnt) {
-                if (sdsRecEvent != NULL) {
-                  sdsRecEvent(rec, SDS_REC_EVENT_IO_ERROR);
-                }
+                event = SDS_REC_EVENT_IO_ERROR;
               }
+            } else {
+              sdsClear(rec->stream);
+              event = SDS_REC_EVENT_DATA_LOST;
+            }
+            if ((sdsRecEvent != NULL) && (event != 0U)) {
+              sdsRecEvent(rec, event);
             }
           }
         }
@@ -185,22 +198,26 @@ int32_t sdsRecUninit (void) {
 }
 
 // Open recorder stream
-sdsRecId_t sdsRecOpen (const char *name, void *buf, uint32_t buf_size, uint32_t record_size) {
+sdsRecId_t sdsRecOpen (const char *name, void *buf, uint32_t buf_size, uint32_t io_threshold) {
   sdsRec_t *rec = NULL;
   uint32_t index;
 
-  if ((name != NULL) && (buf != NULL) && (buf_size != 0U) &&
-      (record_size != 0U) && (record_size <= SDS_REC_MAX_RECORD_SIZE)) {
+  if ((name != NULL) && (buf != NULL) && (buf_size != 0U) && (io_threshold <= SDS_REC_MAX_RECORD_SIZE)) {
 
     sdsRecLock();
     rec = sdsRecAlloc(&index);
     if (rec != NULL) {
-      rec->record_size = record_size;
-      rec->stream = sdsOpen(buf, buf_size, 0U, record_size);
+      rec->buf_size = buf_size;
+      rec->flag_mask = 0U;
+      rec->stream = sdsOpen(buf, buf_size, 0U, io_threshold);
+      rec->sdsio = sdsioOpen(name, sdsioModeWrite);
       if (rec->stream != NULL) {
-        sdsRegisterEvents(rec->stream, sdsRecEventCallback, SDS_EVENT_DATA_HIGH, (void *)(1U << index));
+        if (io_threshold != 0U) {
+          sdsRegisterEvents(rec->stream, sdsRecEventCallback, SDS_EVENT_DATA_HIGH, (void *)(1U << index));
+        } else {
+          rec->flag_mask = 1U << index;
+        }
       }
-      rec->sdsio = sdsioOpen(name, sdsioModeWrite); 
       if ((rec->stream == NULL) || (rec->sdsio == NULL)) {
         if (rec->stream != NULL) {
           sdsClose(rec->stream);
@@ -237,13 +254,24 @@ int32_t sdsRecClose (sdsRecId_t id) {
 }
 
 // Write data to recorder stream
-uint32_t sdsRecWrite (sdsRecId_t id, const void *buf, uint32_t buf_size) {
+uint32_t sdsRecWrite (sdsRecId_t id, uint32_t timestamp, const void *buf, uint32_t buf_size) {
   sdsRec_t *rec = id;
+  RecHead_t rec_head;
   uint32_t num = 0U;
 
   if ((rec != NULL) && (buf != NULL) && (buf_size != 0U)) {
     sdsRecLock();
-    num = sdsWrite(rec->stream, buf, buf_size);
+    if ((buf_size + sizeof(RecHead_t)) <= (rec->buf_size -  sdsGetCount(rec->stream))) {
+      // Write record to the stream: timestamp, data size, data
+      rec_head.timestamp = timestamp;
+      rec_head.data_size = buf_size;
+      if (sdsWrite(rec->stream, &rec_head, sizeof(RecHead_t)) == sizeof(RecHead_t)) {
+        num = sdsWrite(rec->stream, buf, buf_size);
+        if (rec->flag_mask != 0U) {
+          osThreadFlagsSet(sdsRecThreadId, rec->flag_mask);
+        }
+      }
+    }
     sdsRecUnLock();
   }
   return num;
