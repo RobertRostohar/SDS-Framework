@@ -5,6 +5,46 @@
 
 import logging
 from os import path
+from struct import unpack
+
+
+class RecordManager:
+    def __init__(self):
+        self.HEADER_SIZE    = 8
+        self.TIMESTAMP_SIZE = 4
+        self.payload = bytearray()
+
+    def flush(self):
+        logging.info("Flush Record Data")
+        self.payload = bytearray()
+
+    def getRecord(self):
+        logging.info("Get Record Data")
+        data = readFile(self.HEADER_SIZE)
+        if len(data) == self.HEADER_SIZE:
+            timestamp = unpack("i", data[:self.TIMESTAMP_SIZE])[0]
+            payload_size = unpack("i", data[self.TIMESTAMP_SIZE:])[0]
+            self.payload = readFile(payload_size)
+            logging.debug(f"Record Data size: {len(self.payload)}")
+        else:
+            logging.info("No Record")
+            self.payload = bytearray()
+
+    def getData(self, size):
+        logging.info("Get Data from Record")
+
+        if len(self.payload) == 0:
+            self.getRecord()
+
+        if len(self.payload) >= size:
+            data = self.payload[:size]
+            self.payload = self.payload[size:]
+            logging.debug(f"Requested Data size: {size}")
+        else:
+            logging.info("No Data in Record")
+            data = bytearray(size)
+
+        return data
 
 
 class FifoBuff:
@@ -22,7 +62,7 @@ class FifoBuff:
 
         # Check if buffer is already full
         if self.count == self.buff_size:
-            logging.info("Buffer is full")
+            logging.info("FIFO is full")
             return None
         else:
             self.data[self.idx_put] = byte
@@ -38,7 +78,7 @@ class FifoBuff:
 
         # Check if buffer is already empty
         if self.count == 0:
-            logging.info("Buffer is empty")
+            logging.info("FIFO is empty")
             return None
         else:
             byte = self.data[self.idx_get]
@@ -74,19 +114,23 @@ STATUS_OVERFLOW_Msk  = 1<<0
 IRQ_Status_Threshold_Msk = 1<<0
 IRQ_Status_Overflow_Msk  = 1<<1
 
-# Global variables
+# Filename variables
 sensor_filename = ""
 sensor_name_idx = 0
 sensor_idx      = 0
 
+# FIFO buffer
 FIFO = FifoBuff(1, 0)
+
+# Record manager
+Record = RecordManager()
 
 ## Open sensor recording file
 #  @param name name of file to open
 def openFile(name):
     global file
 
-    logging.info(f"Open recording (read mode): {name}")
+    logging.info(f"Open recording file (read mode): {name}")
     try:
         file = open(f"{name}", "rb")
     except Exception as e:
@@ -100,18 +144,11 @@ def readFile(n_bytes):
     global file
 
     try:
-        logging.info("Read data")
-        tmp_data = file.read(n_bytes)
-
-        if len(tmp_data) < n_bytes:
-            data = bytearray(n_bytes)
-            data[:len(tmp_data)] = tmp_data
-        else:
-            data = tmp_data
-
+        logging.info("Read recording file")
+        data = bytearray(file.read(n_bytes))
     except Exception as e:
         logging.debug(f"An error occurred when reading n_bytes = {n_bytes}: {e}")
-        data = bytearray(n_bytes)
+        data = bytearray()
 
     return data
 
@@ -148,7 +185,7 @@ def timerEvent(IRQ_Status):
     global STATUS
 
     if (CONTROL & CONTROL_DMA_Msk) == 0:
-        data = readFile(SAMPLE_SIZE)
+        data = Record.getData(SAMPLE_SIZE)
         for b in range(SAMPLE_SIZE):
             byte = FIFO.put(data[b])
             if byte is None:
@@ -164,6 +201,15 @@ def timerEvent(IRQ_Status):
     return IRQ_Status
 
 
+## Read data from peripheral for DMA P2M transfer (VSI DMA)
+#  @param size size of data to read (in bytes, multiple of 4)
+#  @return data data read (bytearray)
+def rdDataDMA(size):
+    data = Record.getData(size)
+
+    return data
+
+
 ## Write CONTROL register (user register)
 #  @param value value to write (32-bit)
 def wrCONTROL(value):
@@ -171,6 +217,7 @@ def wrCONTROL(value):
 
     if ((value ^ CONTROL) & CONTROL_ENABLE_Msk) != 0:
         STATUS = 0
+        Record.flush()
         if (value & CONTROL_ENABLE_Msk) != 0:
             logging.info("Enable Sensor")
             if SENSOR_NAME_VALID:
