@@ -30,21 +30,25 @@
 
 #ifdef RECORDER_ENABLED
 #ifndef REC_BUF_SIZE_ACCELEROMETER
-#define REC_BUF_SIZE_ACCELEROMETER          8192U
+#define REC_BUF_SIZE_ACCELEROMETER          1024U
 #endif
 #ifndef REC_BUF_SIZE_TEMPERATURE_SENSOR
 #define REC_BUF_SIZE_TEMPERATURE_SENSOR     256U
 #endif
-#ifndef REC_RECORD_SIZE_ACCELEROMETER
-#define REC_RECORD_SIZE_ACCELEROMETER       1020U
+#ifndef REC_IO_THRESHOLD_ACCELEROMETER
+#define REC_IO_THRESHOLD_ACCELEROMETER      900U
 #endif
-#ifndef REC_RECORD_SIZE_TEMPERATURE_SENSOR
-#define REC_RECORD_SIZE_TEMPERATURE_SENSOR  16U
+#ifndef REC_IO_THRESHOLD_TEMPERATURE_SENSOR
+#define REC_IO_THRESHOLD_TEMPERATURE_SENSOR 16U
 #endif
 #endif
 
 #ifndef SENSOR_POLLING_INTERVAL
-#define SENSOR_POLLING_INTERVAL             5U  /* 5ms */
+#define SENSOR_POLLING_INTERVAL             10U  /* 10ms */
+#endif
+
+#ifndef SENSOR_BUF_SIZE
+#define SENSOR_BUF_SIZE                     6U
 #endif
 
 // Sensor identifiers
@@ -73,6 +77,9 @@ static uint8_t recBuf_accelerometer[REC_BUF_SIZE_ACCELEROMETER];
 static uint8_t recBuf_temperatureSensor[REC_BUF_SIZE_TEMPERATURE_SENSOR];
 #endif
 
+// Temporary sensor buffer
+static uint8_t sensorBuf[SENSOR_BUF_SIZE];
+
 // Thread identifiers
 static osThreadId_t thrId_demo         = NULL;
 static osThreadId_t thrId_read_sensors = NULL;
@@ -83,56 +90,54 @@ static osThreadId_t thrId_read_sensors = NULL;
 #define EVENT_DATA_MASK                 (EVENT_DATA_ACCELEROMETER | EVENT_DATA_TEMPERATURE_SENSOR)
 #define EVENT_MASK                      (EVENT_DATA_MASK | EVENT_BUTTON)
 
-// Sensor event callback
-static void sensor_event_callback (sensorId_t id, uint32_t event) {
-
-  if ((event & SENSOR_EVENT_DATA) != 0U) {
-    if (id == sensorId_accelerometer) {
-      osThreadFlagsSet(thrId_read_sensors, EVENT_DATA_ACCELEROMETER);
-    }
-    if (id == sensorId_temperatureSensor) {
-      osThreadFlagsSet(thrId_read_sensors, EVENT_DATA_TEMPERATURE_SENSOR);
-    }
-  }
-}
-
 // Read sensor thread
 static __NO_RETURN void read_sensors (void *argument) {
-  uint32_t num, flags, buf_size;
-  uint8_t  buf[6];
+  uint32_t num, buf_size;
+  uint32_t timestamp;
   (void)   argument;
 
   for (;;) {
-    flags = osThreadFlagsWait(EVENT_DATA_MASK, osFlagsWaitAny, SENSOR_POLLING_INTERVAL);
+    timestamp = osKernelGetTickCount();
 
-    if ((((flags & osFlagsError) == 0U) && ((flags & EVENT_DATA_ACCELEROMETER) != 0U)) ||
-          (flags == osFlagsErrorTimeout)) {
-
-      if (sensorGetStatus(sensorId_accelerometer).active != 0U) {
-        num = sensorReadSamples(sensorId_accelerometer, 1U, buf, sizeof(buf));
-        if (num != 0U) {
-          buf_size = num * sensorConfig_accelerometer->sample_size;
-          sdsWrite(sdsId_accelerometer, buf, buf_size);
-#ifdef RECORDER_ENABLED
-          sdsRecWrite(recId_accelerometer, buf, buf_size);
-#endif
+    if (sensorGetStatus(sensorId_accelerometer).active != 0U) {
+      num = sizeof(sensorBuf) / sensorConfig_accelerometer->sample_size;
+      num = sensorReadSamples(sensorId_accelerometer, num, sensorBuf, sizeof(sensorBuf));
+      if (num != 0U) {
+        buf_size = num * sensorConfig_accelerometer->sample_size;
+        num = sdsWrite(sdsId_accelerometer, sensorBuf, buf_size);
+        if (num != buf_size) {
+          printf("%s: SDS write failed\r\n", sensorConfig_accelerometer->name);
         }
+#ifdef RECORDER_ENABLED
+        num = sdsRecWrite(recId_accelerometer, timestamp, sensorBuf, buf_size);
+        if (num != buf_size) {
+          printf("%s: Recorder write failed\r\n", sensorConfig_accelerometer->name);
+        }
+#endif
       }
     }
 
-    if ((((flags & osFlagsError) == 0U) && ((flags & EVENT_DATA_TEMPERATURE_SENSOR) != 0U)) ||
-          (flags == osFlagsErrorTimeout)) {
-
-      if (sensorGetStatus(sensorId_temperatureSensor).active != 0U) {
-        num = sensorReadSamples(sensorId_temperatureSensor, 1U, buf, sizeof(buf));
-        if (num != 0U) {
-          buf_size = num * sensorConfig_temperatureSensor->sample_size;
-          sdsWrite(sdsId_temperatureSensor, buf, buf_size);
-#ifdef RECORDER_ENABLED
-          sdsRecWrite(recId_temperatureSensor, buf, buf_size);
-#endif
+    if (sensorGetStatus(sensorId_temperatureSensor).active != 0U) {
+      num = sizeof(sensorBuf) / sensorConfig_temperatureSensor->sample_size;
+      num = sensorReadSamples(sensorId_temperatureSensor, num, sensorBuf, sizeof(sensorBuf));
+      if (num != 0U) {
+        buf_size = num * sensorConfig_temperatureSensor->sample_size;
+        num = sdsWrite(sdsId_temperatureSensor, sensorBuf, buf_size);
+        if (num != buf_size) {
+          printf("%s: SDS write failed\r\n", sensorConfig_temperatureSensor->name);
         }
+#ifdef RECORDER_ENABLED
+        num = sdsRecWrite(recId_temperatureSensor, timestamp, sensorBuf, buf_size);
+        if (num != buf_size) {
+          printf("%s: Recorder write failed\r\n", sensorConfig_temperatureSensor->name);
+        }
+#endif
       }
+    }
+
+    timestamp += SENSOR_POLLING_INTERVAL;
+    if (timestamp < osKernelGetTickCount()) {
+      osDelayUntil(timestamp);
     }
   }
 }
@@ -170,6 +175,28 @@ static void sds_event_callback (sdsId_t id, uint32_t event, void *arg) {
   }
 }
 
+// Recorder event callback
+#ifdef RECORDER_ENABLED
+static void recorder_event_callback (sdsRecId_t id, uint32_t event) {
+  if (event & SDS_REC_EVENT_IO_ERROR) {
+    if (id == recId_accelerometer) {
+      printf("%s: Recorder event - I/O error\r\n", sensorConfig_accelerometer->name);
+    }
+    if (id == recId_temperatureSensor) {
+      printf("%s: Recorder event - I/O error\r\n", sensorConfig_temperatureSensor->name);
+    }
+  }
+  if (event & SDS_REC_EVENT_DATA_LOST) {
+    if (id == recId_accelerometer) {
+      printf("%s: Recorder event - Data lost\r\n", sensorConfig_accelerometer->name);
+    }
+    if (id == recId_temperatureSensor) {
+      printf("%s: Recorder event - Data lost\r\n", sensorConfig_temperatureSensor->name);
+    }
+  }
+}
+#endif
+
 // Sensor Demo
 void __NO_RETURN demo(void) {
   uint32_t  n, num, flags;
@@ -187,10 +214,6 @@ void __NO_RETURN demo(void) {
   sensorConfig_accelerometer     = sensorGetConfig(sensorId_accelerometer);
   sensorConfig_temperatureSensor = sensorGetConfig(sensorId_temperatureSensor);
 
-  // Register sensor event
-  sensorRegisterEvents(sensorId_accelerometer,     sensor_event_callback, SENSOR_EVENT_DATA);
-  sensorRegisterEvents(sensorId_temperatureSensor, sensor_event_callback, SENSOR_EVENT_DATA);
-
   // Open SDS
   sdsId_accelerometer     = sdsOpen(sdsBuf_accelerometer,
                                     sizeof(sdsBuf_accelerometer),
@@ -206,7 +229,7 @@ void __NO_RETURN demo(void) {
 
 #ifdef RECORDER_ENABLED
   // Initialize recorder
-  sdsRecInit(NULL);
+  sdsRecInit(recorder_event_callback);
 #endif
 
   // Create sensor thread
@@ -230,7 +253,7 @@ void __NO_RETURN demo(void) {
           recId_accelerometer = sdsRecOpen("Accelerometer",
                                            recBuf_accelerometer,
                                            sizeof(recBuf_accelerometer),
-                                           REC_RECORD_SIZE_ACCELEROMETER);
+                                           REC_IO_THRESHOLD_ACCELEROMETER);
 #endif
           sensorEnable(sensorId_accelerometer);
           printf("Accelerometer enabled\r\n");
@@ -251,7 +274,7 @@ void __NO_RETURN demo(void) {
           recId_temperatureSensor = sdsRecOpen("Temperature",
                                                recBuf_temperatureSensor,
                                                sizeof(recBuf_temperatureSensor),
-                                               REC_RECORD_SIZE_TEMPERATURE_SENSOR);
+                                               REC_IO_THRESHOLD_TEMPERATURE_SENSOR);
 #endif
           sensorEnable(sensorId_temperatureSensor);
           printf("Temperature sensor enabled\r\n");
