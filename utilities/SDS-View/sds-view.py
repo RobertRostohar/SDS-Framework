@@ -9,6 +9,35 @@ import numpy as np
 import yaml
 
 
+class RecordManager:
+    def __init__(self):
+        self.HEADER_SIZE    = 8
+        self.TIMESTAMP_SIZE = 4
+        self.data = bytearray()
+
+    # Flush data buffer
+    def flush(self):
+        self.data = bytearray()
+
+    # Private function for retrieving data from record
+    def __getRecord(self, file):
+        record = bytearray(file.read(self.HEADER_SIZE))
+        if len(record) == self.HEADER_SIZE:
+            timestamp = struct.unpack("i", record[:self.TIMESTAMP_SIZE])[0]
+            data_size = struct.unpack("i", record[self.TIMESTAMP_SIZE:])[0]
+            self.data.extend(bytearray(file.read(data_size)))
+            return True
+        else:
+            return False
+
+    # Extract all data from recording file
+    def getData(self, file):
+        record = True
+        while record:
+            record = self.__getRecord(file)
+        return self.data
+
+
 # Convert C style data type to Python style
 def getDataType(data_type):
     match data_type:
@@ -32,11 +61,10 @@ def getDataType(data_type):
 def openFile(file_name):
     try:
         if ".yml" in file_name:
-            f = open(file_name, "r")
+            file = open(file_name, "r")
         else:
-            f = open(file_name, "rb")
-
-        return f
+            file = open(file_name, "rb")
+        return file
     except Exception as e:
         print(f"Error in openFile({file_name}): {e}")
         sys.exit(1)
@@ -137,16 +165,18 @@ def main():
         print(f"Error: Sample frequency must be greater than 0 (f = {data_freq})\n")
         sys.exit(0)
 
-    # Read .sds file/files
-    data = {}
-    for arg in args.sds:
-        data_file = openFile(arg)
-        data[f"{arg}"] = data_file.read()
-        closeFile(data_file)
+    # Record manager
+    Record = RecordManager()
 
-    # Plot data from .sds file/files
-    for d in data:
-        plotData(data[d], data_desc, data_freq, data_name)
+    # Read .sds file/files
+    for arg in args.sds:
+        file = openFile(arg)
+        data = Record.getData(file)
+        closeFile(file)
+        Record.flush()
+
+        # Plot data from .sds file/files
+        plotData(data, data_desc, data_freq, data_name)
 
     # Show plotted figures
     plt.grid(linestyle=":")
