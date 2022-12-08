@@ -135,7 +135,7 @@ def rdDataDMA(size):
     global Data
     logging.info("Python function rdDataDMA() called")
 
-    Data = vsi_sensor.readFile(size)
+    Data = vsi_sensor.rdDataDMA(size)
 
     n = min(len(Data), size)
     data = bytearray(size)
