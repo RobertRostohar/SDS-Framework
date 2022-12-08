@@ -55,15 +55,20 @@ Stream data is recorded (written to an Output device).
 Output device can be a File System, STDIO, Socket, ...  
 
 The API is defined in [sds_rec.h](include/sds_rec.h). It features the following functions:
-- `sdsRecInit`: Initializes the recorder interface.
+- `sdsRecInit`: Initializes the recorder interface and registers an optional event callback function.
 - `sdsRecUnInit`: Un-initializes the recorder interface.
-- `sdsRecOpen`: Opens a named recorder stream with user provided buffer and specified record size. 
+- `sdsRecOpen`: Opens a named recorder stream with user provided buffer and specified threshold to trigger I/O write. 
   It returns the recorder stream identifier which is used in other functions specifying a recorder stream.
 - `sdsRecClose`: Closes the specified recorder stream.
-- `sdsRecWrite`: Writes data to the specified recorder stream and returns the number of bytes written (no overflow).
+- `sdsRecWrite`: Writes a record with data and timestamp to the specified recorder stream 
+  and returns the number of data bytes written (no overflow).
 
 The function `sdsRecWrite` call shall be non-blocking where other function calls are typically blocking. 
 All function calls except `sdsRecInit/UnInit` shall be thread-safe.
+
+Optional event callback function is executed with event:
+- `SDS_REC_EVENT_IO_ERROR`: when an I/O error occurs during writing to the output device. 
+- `SDS_REC_EVENT_DATA_LOST` when data is lost during I/O (buffers too small).
 
 The following reference implementation is provided in [sds_rec.c](source/sds_rec.c). It features:
 - user configurable number of streams (default: 8 streams, max: 30)
@@ -77,12 +82,17 @@ Stream data is played back (read from an Input device).
 Input device can be a File System, STDIO, Socket, ...  
 
 The API is defined in [sds_play.h](include/sds_play.h). It features the following functions:
-- `sdsPlayInit`: Initializes the player interface.
+- `sdsPlayInit`: Initializes the player interface and registers an optional event callback function.
 - `sdsPlayUninit`: Un-initializes the player interface.
-- `sdsPlayOpen`: Opens a named player stream with user provided buffer and specified record size. 
+- `sdsPlayOpen`: Opens a named player stream with user provided buffer and specified threshold to trigger I/O read. 
   It returns the player stream identifier which is used in other functions specifying a player stream.
 - `sdsPlayClose`: Closes the specified player stream.
-- `sdsPlayRead`: Reads data from the specified player stream and returns the number of bytes read.
+- `sdsPlayRead`: Reads a record with data and timestamp from the specified player stream 
+  and returns the number of data bytes read.
 
 The function `sdsPlayRead` call shall be non-blocking where other function calls are typically blocking. 
 All function calls except `sdsPlayInit/UnInit` shall be thread-safe.
+
+Optional event callback function is executed with event:
+- `SDS_PLAY_EVENT_IO_ERROR`: when an I/O error occurs during reading from the input device. 
+- `SDS_PLAY_EVENT_DATA_LOST` when data is lost during I/O (buffers too small).

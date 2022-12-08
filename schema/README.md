@@ -1,6 +1,12 @@
 # SDS File Format
 
 The **SDS Framework** uses a binary data format to store the individual data streams.
+
+The binary data consists of records (variable size). Each record contains:
+ - timestamp: record timestamp in milliseconds (32-bit unsigned integer, little endian)
+ - data_size: number of data bytes in the record (32-bit unsigned integer, little endian)
+ - data: data stream in the record
+
 The content of the data stream is described in a YAML metadata file that is created by the user.
 
 ## YML Format
@@ -16,7 +22,7 @@ The following section defines the YAML format of this metadata file. The file `s
 
 `content:`                           | List of values captured (in the order of the data file)
 :------------------------------------|---------------------------------------------------
-`- value:`                           | Name of the value
+&nbsp;&nbsp; `value:`                | Name of the value
 &nbsp;&nbsp; `type:`                 | Data type of the value
 &nbsp;&nbsp; `offset:`               | Offset of the value
 &nbsp;&nbsp; `scale:`                | Scale factor of the value
