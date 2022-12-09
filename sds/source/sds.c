@@ -6,6 +6,7 @@
 
 #include <string.h>
 
+#include "cmsis_compiler.h"
 #include "sds.h"
 
 // Configuration
@@ -33,14 +34,77 @@ static sds_t *pStreams[SDS_MAX_STREAMS] = {NULL};
 
 // Helper functions
 
+#ifndef EXCLUSIVE_ACCESS
+#if   ((defined(__ARM_ARCH_7M__)        && (__ARM_ARCH_7M__        != 0)) || \
+       (defined(__ARM_ARCH_7EM__)       && (__ARM_ARCH_7EM__       != 0)) || \
+       (defined(__ARM_ARCH_8M_BASE__)   && (__ARM_ARCH_8M_BASE__   != 0)) || \
+       (defined(__ARM_ARCH_8M_MAIN__)   && (__ARM_ARCH_8M_MAIN__   != 0)) || \
+       (defined(__ARM_ARCH_8_1M_MAIN__) && (__ARM_ARCH_8_1M_MAIN__ != 0)))
+#define EXCLUSIVE_ACCESS        1
+#else
+#define EXCLUSIVE_ACCESS        0
+#endif
+#endif
+
+// Atomic Access Operation: Write 32-bit value to the memory, if exsisting value in the memory is zero
+//  Return: New value in the memory or 0 if exsisting value in the memory is not zero
+#if (EXCLUSIVE_ACCESS == 0)
+__STATIC_INLINE uint32_t atomic_wr32_z (uint32_t *mem, uint32_t val) {
+  uint32_t primask = __get_PRIMASK();
+  uint32_t ret = 0U;
+
+  __disable_irq();
+  if (*mem == NULL) {
+    *mem = val;
+    ret = val;
+  }
+  if (primask == 0U) {
+    __enable_irq();
+  }
+
+  return ret;
+}
+#else
+__STATIC_INLINE uint32_t atomic_wr32_z (uint32_t *mem, uint32_t val) {
+#ifdef  __ICCARM__
+#pragma diag_suppress=Pe550
+#endif
+  register uint32_t res, ret;
+
+  __ASM volatile (
+#ifndef __ICCARM__
+  ".syntax unified\n\t"
+#endif
+  "1:\n\t"
+    "ldrex %[res],[%[mem]]\n\t"
+    "cbz   %[res],2f\n\t"
+    "clrex\n\t"
+    "mov  %[ret],#0\n\t"
+    "b     3f\n"
+  "2:\n\t"
+    "strex %[res],%[val],[%[mem]]\n\t"
+    "ldr   %[ret],[%[mem]]\n\t"
+    "cbz   %[res],3f\n\t"
+    "b     1b\n"
+  "3:"
+  : [ret] "=&l" (ret),
+    [res] "=&l" (res)
+  : [mem] "l"   (mem),
+    [val] "l"   (val)
+  : "cc", "memory"
+  );
+  return ret;
+}
+#endif
+
+
 static sds_t *sdsAlloc (void) {
   sds_t *stream = NULL;
   uint32_t n;
 
   for (n = 0U; n < SDS_MAX_STREAMS; n++) {
-    if (pStreams[n] == NULL) {
+    if (atomic_wr32_z((uint32_t *)&pStreams[n], (uint32_t)&Streams[n]) != 0U) {
       stream = &Streams[n];
-      pStreams[n] = stream;
       break;
     }
   }
