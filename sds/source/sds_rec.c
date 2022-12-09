@@ -234,10 +234,15 @@ sdsRecId_t sdsRecOpen (const char *name, void *buf, uint32_t buf_size, uint32_t 
 // Close recorder stream
 int32_t sdsRecClose (sdsRecId_t id) {
   sdsRec_t *rec = id;
+  uint32_t cnt;
   int32_t  ret = SDS_ERROR;
 
   if (rec != NULL) {
     sdsRecLock();
+    cnt = sdsRead(rec->stream, pRecBuf, SDS_REC_MAX_RECORD_SIZE);
+    if (cnt != 0U) {
+      sdsioWrite(rec->sdsio, pRecBuf, cnt);
+    }
     sdsClose(rec->stream);
     sdsioClose(rec->sdsio);
     sdsRecFree(rec);
