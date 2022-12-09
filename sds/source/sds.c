@@ -3,6 +3,7 @@
  */
 
 // Synchronous Data Stream (SDS)
+
 #include <string.h>
 
 #include "cmsis_compiler.h"
