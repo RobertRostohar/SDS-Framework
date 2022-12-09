@@ -22,7 +22,7 @@ Demo is available for the following targets:
 
 ### Software:
  - [CMSIS-Toolbox 1.2.0](https://github.com/Open-CMSIS-Pack/cmsis-toolbox/releases/tag/1.2.0) or later
- - Arm Compiler 6.18 or higher
+ - Arm Compiler 6.18 or later
  - [python 3.9 or later](https://www.python.org/downloads/windows/)
 
 ### CMSIS Packs:
@@ -45,6 +45,7 @@ WiFi Access Point:
 1. Use the `csolution` command to create `.cprj` project files.
    ```
    > csolution convert -s Demo.csolution.yml
+   ```
 
 2. Use the `cbuild` command to create executable files.
    ```
