@@ -12,33 +12,33 @@ class RecordManager:
     def __init__(self):
         self.HEADER_SIZE    = 8
         self.TIMESTAMP_SIZE = 4
-        self.payload = bytearray()
+        self.data_buff = bytearray()
 
     def flush(self):
         logging.info("Flush Record Data")
-        self.payload = bytearray()
+        self.data_buff = bytearray()
 
-    def getRecord(self):
+    def __getRecord(self):
         logging.info("Get Record Data")
         data = readFile(self.HEADER_SIZE)
         if len(data) == self.HEADER_SIZE:
             timestamp = unpack("i", data[:self.TIMESTAMP_SIZE])[0]
-            payload_size = unpack("i", data[self.TIMESTAMP_SIZE:])[0]
-            self.payload = readFile(payload_size)
-            logging.debug(f"Record Data size: {len(self.payload)}")
+            data_size = unpack("i", data[self.TIMESTAMP_SIZE:])[0]
+            self.data_buff = readFile(data_size)
+            logging.debug(f"Record Data size: {len(self.data_buff)}")
         else:
             logging.info("No Record")
-            self.payload = bytearray()
+            self.data_buff = bytearray()
 
     def getData(self, size):
         logging.info("Get Data from Record")
 
-        if len(self.payload) == 0:
-            self.getRecord()
+        if len(self.data_buff) == 0:
+            self.__getRecord()
 
-        if len(self.payload) >= size:
-            data = self.payload[:size]
-            self.payload = self.payload[size:]
+        if len(self.data_buff) >= size:
+            data = self.data_buff[:size]
+            self.data_buff = self.data_buff[size:]
             logging.debug(f"Requested Data size: {size}")
         else:
             logging.info("No Data in Record")
