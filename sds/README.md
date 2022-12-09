@@ -67,8 +67,7 @@ The function `sdsRecWrite` call shall be non-blocking where other function calls
 All function calls except `sdsRecInit/UnInit` shall be thread-safe.
 
 Optional event callback function is executed with event:
-- `SDS_REC_EVENT_IO_ERROR`: when an I/O error occurs during writing to the output device. 
-- `SDS_REC_EVENT_DATA_LOST` when data is lost during I/O (buffers too small).
+- `SDS_REC_EVENT_IO_ERROR`: when an I/O error occurs during writing to the output device.
 
 The following reference implementation is provided in [sds_rec.c](source/sds_rec.c). It features:
 - user configurable number of streams (default: 8 streams, max: 30)
@@ -95,4 +94,3 @@ All function calls except `sdsPlayInit/UnInit` shall be thread-safe.
 
 Optional event callback function is executed with event:
 - `SDS_PLAY_EVENT_IO_ERROR`: when an I/O error occurs during reading from the input device. 
-- `SDS_PLAY_EVENT_DATA_LOST` when data is lost during I/O (buffers too small).

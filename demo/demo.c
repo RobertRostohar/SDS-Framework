@@ -186,14 +186,6 @@ static void recorder_event_callback (sdsRecId_t id, uint32_t event) {
       printf("%s: Recorder event - I/O error\r\n", sensorConfig_temperatureSensor->name);
     }
   }
-  if (event & SDS_REC_EVENT_DATA_LOST) {
-    if (id == recId_accelerometer) {
-      printf("%s: Recorder event - Data lost\r\n", sensorConfig_accelerometer->name);
-    }
-    if (id == recId_temperatureSensor) {
-      printf("%s: Recorder event - Data lost\r\n", sensorConfig_temperatureSensor->name);
-    }
-  }
 }
 #endif
 

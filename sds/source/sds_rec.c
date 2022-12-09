@@ -134,7 +134,6 @@ static void sdsRecEventCallback (sdsId_t id, uint32_t event, void *arg) {
 static __NO_RETURN void sdsRecThread (void *arg) {
   sdsRec_t *rec;
   uint32_t flags, cnt, n;
-  uint32_t event = 0U;
 
   (void)arg;
 
@@ -146,18 +145,13 @@ static __NO_RETURN void sdsRecThread (void *arg) {
         if (flags & (1U << n)) {
           rec = pRecStreams[n];
           if (rec != NULL) {
-            cnt = sdsGetCount(rec->stream);
-            if (cnt <= sizeof(RecBuf)) {
-              cnt = sdsRead(rec->stream, pRecBuf, cnt);
+            cnt = sdsRead(rec->stream, pRecBuf, SDS_REC_MAX_RECORD_SIZE);
+            if (cnt != 0U) {
               if (sdsioWrite(rec->sdsio, pRecBuf, cnt) != cnt) {
-                event = SDS_REC_EVENT_IO_ERROR;
+                if (sdsRecEvent != NULL) {
+                  sdsRecEvent(rec, SDS_REC_EVENT_IO_ERROR);
+                }
               }
-            } else {
-              sdsClear(rec->stream);
-              event = SDS_REC_EVENT_DATA_LOST;
-            }
-            if ((sdsRecEvent != NULL) && (event != 0U)) {
-              sdsRecEvent(rec, event);
             }
           }
         }
@@ -202,7 +196,8 @@ sdsRecId_t sdsRecOpen (const char *name, void *buf, uint32_t buf_size, uint32_t 
   sdsRec_t *rec = NULL;
   uint32_t index;
 
-  if ((name != NULL) && (buf != NULL) && (buf_size != 0U) && (io_threshold <= SDS_REC_MAX_RECORD_SIZE)) {
+  if ((name != NULL) && (buf != NULL) && (buf_size != 0U) &&
+      (buf_size <= SDS_REC_MAX_RECORD_SIZE) && (io_threshold <= buf_size)) {
 
     sdsRecLock();
     rec = sdsRecAlloc(&index);
