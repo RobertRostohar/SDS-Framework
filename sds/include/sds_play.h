@@ -23,7 +23,6 @@ typedef void *sdsPlayId_t;
 
 /// Events
 #define SDS_PLAY_EVENT_IO_ERROR  (1UL << 0) ///< I/O Error
-#define SDS_PLAY_EVENT_DATA_LOST (1UL << 1) ///< Data lost
 
 /// Event callback function
 typedef void (*sdsPlayEvent_t) (sdsPlayId_t id, uint32_t event);
