@@ -36,8 +36,8 @@ class RecordManager:
         logging.info("Get Record Data")
         data = readFile(self.HEADER_SIZE)
         if len(data) == self.HEADER_SIZE:
-            timestamp = unpack("i", data[:self.TIMESTAMP_SIZE])[0]
-            data_size = unpack("i", data[self.TIMESTAMP_SIZE:])[0]
+            timestamp = unpack("I", data[:self.TIMESTAMP_SIZE])[0]
+            data_size = unpack("I", data[self.TIMESTAMP_SIZE:])[0]
             self.data_buff = readFile(data_size)
             logging.debug(f"Record Data size: {len(self.data_buff)}")
         else:
