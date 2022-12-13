@@ -44,7 +44,7 @@
 #endif
 
 #ifndef SENSOR_POLLING_INTERVAL
-#define SENSOR_POLLING_INTERVAL             10U  /* 10ms */
+#define SENSOR_POLLING_INTERVAL             5U  /* 5ms */
 #endif
 
 #ifndef SENSOR_BUF_SIZE
@@ -96,9 +96,8 @@ static __NO_RETURN void read_sensors (void *argument) {
   uint32_t timestamp;
   (void)   argument;
 
+  timestamp = osKernelGetTickCount();
   for (;;) {
-    timestamp = osKernelGetTickCount();
-
     if (sensorGetStatus(sensorId_accelerometer).active != 0U) {
       num = sizeof(sensorBuf) / sensorConfig_accelerometer->sample_size;
       num = sensorReadSamples(sensorId_accelerometer, num, sensorBuf, sizeof(sensorBuf));
@@ -136,9 +135,7 @@ static __NO_RETURN void read_sensors (void *argument) {
     }
 
     timestamp += SENSOR_POLLING_INTERVAL;
-    if (timestamp < osKernelGetTickCount()) {
-      osDelayUntil(timestamp);
-    }
+    osDelayUntil(timestamp);
   }
 }
 
