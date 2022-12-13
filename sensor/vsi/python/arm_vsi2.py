@@ -111,6 +111,7 @@ def wrTimer(index, value):
         Timer_Control = value
         logging.debug("Write Timer_Control: {}".format(value))
     elif index == 1:
+        value = vsi_sensor.wrTimerInterval(value)
         Timer_Interval = value
         logging.debug("Write Timer_Interval: {}".format(value))
 
