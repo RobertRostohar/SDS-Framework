@@ -5,6 +5,7 @@ The **Synchronous Data Stream (SDS) Framework** implements a data stream managem
 ## Overview 
 
 - Implements a flexible data stream management for sensor and audio data interfaces
+   - Supports data streams from multiple interfaces including provisions for time drifts. 
 
 - Provides methods to **record real-world data** for analysis and development
   - Input to Digital Signal Processing (DSP) development tools such as filter designers
