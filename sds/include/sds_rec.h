@@ -79,7 +79,7 @@ int32_t sdsRecClose (sdsRecId_t id);
   \fn          uint32_t sdsRecWrite (sdsRecId_t id, const void *buf, uint32_t buf_size)
   \brief       Write data to recorder stream.
   \param[in]   id             \ref sdsRecId_t
-  \param[in]   timestamp      record timestamp in millisec
+  \param[in]   timestamp      record timestamp in ticks
   \param[in]   buf            pointer to buffer with data to write
   \param[in]   buf_size       buffer size in bytes
   \return      number of data bytes written

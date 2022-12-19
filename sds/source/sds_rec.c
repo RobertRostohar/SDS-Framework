@@ -58,7 +58,7 @@ static sdsRec_t *pRecStreams[SDS_REC_MAX_STREAMS] = {NULL};
 
 // Record header
 typedef struct {
-  uint32_t    timestamp;        // Timestamp in milliseconds
+  uint32_t    timestamp;        // Timestamp in ticks
   uint32_t    data_size;        // Data size in bytes
 } RecHead_t;
 

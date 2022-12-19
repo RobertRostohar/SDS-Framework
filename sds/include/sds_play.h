@@ -79,7 +79,7 @@ int32_t sdsPlayClose (sdsPlayId_t id);
   \fn          uint32_t sdsPlayRead (sdsPlayId_t id, void *buf, uint32_t buf_size)
   \brief       Write data to Player stream.
   \param[in]   id             \ref sdsPlayId_t
-  \param[out]  timestamp      pointer to buffer for record timestamp in millisec
+  \param[out]  timestamp      pointer to buffer for record timestamp in ticks
   \param[out]  buf            pointer to buffer for data to read
   \param[in]   buf_size       buffer size in bytes
   \return      number of data bytes read
