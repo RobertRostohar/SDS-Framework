@@ -1,36 +1,39 @@
-# SDS File Format
+# Synchronous Data Stream - File Format
 
-The **SDS Framework** uses a binary data format to store the individual data streams.
+The **SDS Framework** uses a binary data file format to store the individual data streams. It supports the recording and playback of multiple data streams that may have jitters.  Therefore each stream contains timestamp information that allows to correlate the data streams as it is for example required in a sensor fusion application.
 
-The binary data consists of records (variable size). Each record contains:
- - timestamp: record timestamp in milliseconds (32-bit unsigned integer, little endian)
- - data_size: number of data bytes in the record (32-bit unsigned integer, little endian)
- - data: data stream in the record
+The binary data format (stored in `*.<n>.sds` data files) has a record structure with a variable size. Each record has the following format:
+1. **timestamp**: record timestamp in milliseconds (32-bit unsigned integer, little endian)
+2. **data size**: number of data bytes in the record (32-bit unsigned integer, little endian)
+3. **binary data**: SDS stream (little endian, no padding) as described with the `*.sds.yml` file.
 
-The content of the data stream is described in a YAML metadata file that is created by the user.
+The content of each data stream is described in a [YAML](https://en.wikipedia.org/wiki/YAML) metadata file that is created by the user.
 
-## YML Format
+## YAML Format
 
 The following section defines the YAML format of this metadata file. The file `sds.schema.json` is a schema description of the SDS Format Description.
 
 `sds:`                               | Start of the SDS Format Description
 :------------------------------------|---------------------------------------------------
-&nbsp;&nbsp; `name:`                 | Name of the Synchronous Data Stream (SDS)
-&nbsp;&nbsp; `description:`          | Additional descriptive text
-&nbsp;&nbsp; `frequency:`            | Capture frequency of the SDS
-&nbsp;&nbsp; `content:`              | List of values captured (see below)
+&nbsp;&nbsp;&nbsp; `name:`           | Name of the Synchronous Data Stream (SDS)
+&nbsp;&nbsp;&nbsp; `description:`    | Additional descriptive text
+&nbsp;&nbsp;&nbsp; `frequency:`      | Capture frequency of the SDS
+&nbsp;&nbsp;&nbsp; `content:`        | List of values captured (see below)
 
 `content:`                           | List of values captured (in the order of the data file)
 :------------------------------------|---------------------------------------------------
-&nbsp;&nbsp; `value:`                | Name of the value
-&nbsp;&nbsp; `type:`                 | Data type of the value
-&nbsp;&nbsp; `offset:`               | Offset of the value
-&nbsp;&nbsp; `scale:`                | Scale factor of the value
-&nbsp;&nbsp; `unit:`                 | Physical unit of the value
+`- value:`                           | Name of the value
+&nbsp;&nbsp;&nbsp; `type:`           | Data type of the value
+&nbsp;&nbsp;&nbsp; `offset:`         | Offset of the value
+&nbsp;&nbsp;&nbsp; `scale:`          | Scale factor of the value
+&nbsp;&nbsp;&nbsp; `unit:`           | Physical unit of the value
 
 ## Example
 
 This example defines a data stream with the name "sensorX" that contains the values of a gyroscope, temperature sensor, and additional raw data (that are not further described).
+
+![image](https://user-images.githubusercontent.com/8268058/208393980-ebe82918-625b-46d7-8f16-74590f8e1ea2.png)
+
 The binary data that are coming form this sensors are stored in data files with the following file format: `<sensor-name>.<file-index>.sds`. In this example the files names could be:
 
 ```yml
