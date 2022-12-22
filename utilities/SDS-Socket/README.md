@@ -1,7 +1,7 @@
 # SDS-Socket
 Python based socket server for the host PC.
 
-It captures SDS recorder data sent from the target via UDP socket
+It captures SDS recorder data sent from the target via socket
 and writes recordings to files on the host.
 
 Works together with the matching [sdsio_socket.c](../../sds/source/sdsio_socket.c) implementation on the target.
