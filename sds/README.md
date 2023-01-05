@@ -41,6 +41,8 @@ Stream data is written to an Output device or read from an Input device. Input/O
 can be a File System, STDIO, Socket, ...  
 
 The API is defined in [sdsio.h](include/sdsio.h). It features the following functions:
+- `sdsioInit`: Initializes the Input/Output interface.
+- `sdsioUnInit`: Un-initializes the Input/Output interface.
 - `sdsioOpen`: Opens a named I/O stream for read or write operation. 
   It returns the I/O stream identifier which is used in other functions specifying an I/O stream.
 - `sdsioClose`: Closes the specified I/O stream.
