@@ -184,10 +184,13 @@ int32_t sdsRecInit (sdsRecEvent_t event_cb) {
   memset(pRecStreams, 0, sizeof(pRecStreams));
 
   sdsRecLockCreate();
-  sdsRecThreadId = osThreadNew(sdsRecThread, NULL, NULL);
-  if (sdsRecThreadId != NULL)  {
-    sdsRecEvent = event_cb;
-    ret = SDS_OK;
+
+  if (sdsioInit() == SDSIO_OK) {
+    sdsRecThreadId = osThreadNew(sdsRecThread, NULL, NULL);
+    if (sdsRecThreadId != NULL)  {
+      sdsRecEvent = event_cb;
+      ret = SDS_OK;
+    }
   }
   return ret;
 }
@@ -199,6 +202,7 @@ int32_t sdsRecUninit (void) {
   sdsRecLock();
   osThreadTerminate(sdsRecThreadId);
   sdsRecEvent = NULL;
+  sdsioUninit();
   sdsRecUnLock();
   sdsRecLockDelete();
 

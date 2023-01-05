@@ -42,6 +42,20 @@ typedef enum {
 #define SDSIO_ERROR             (-1)        ///< Operation failed
 
 /**
+  \fn          int32_t sdsioInit (void)
+  \brief       Initialize SDS I/O.
+  \return      return code
+*/
+int32_t sdsioInit (void);
+
+/**
+  \fn          int32_t sdsioUninit (void)
+  \brief       Un-initialize SDS I/O.
+  \return      return code
+*/
+int32_t sdsioUninit (void);
+
+/**
   \fn          sdsioId_t sdsioOpen (const char *name, sdsioMode_t mode)
   \brief       Open I/O stream.
   \param[in]   name           stream name (pointer to NULL terminated string)

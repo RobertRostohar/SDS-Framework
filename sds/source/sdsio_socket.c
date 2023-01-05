@@ -52,7 +52,6 @@ typedef struct {
 #define SDSIO_CMD_WRITE         3U
 #define SDSIO_CMD_READ          4U
 
-static uint32_t sdsio_cnt     = 0U;
 static int32_t  socket        = -1;
 
 // Lock function
@@ -129,8 +128,11 @@ static uint32_t sdsioReceive (void *buf, uint32_t buf_size) {
   return num;
 }
 
+
+// SDS I/O functions
+
 /** Initialize I/O interface */
-static int32_t sdsioInit (void) {
+int32_t sdsioInit (void) {
   int32_t  ret  = SDSIO_ERROR;
   uint32_t tout = SOCKET_RECEIVE_TOUT;
 
@@ -155,14 +157,12 @@ static int32_t sdsioInit (void) {
 }
 
 /** Un-initialize I/O interface */
-static int32_t sdsioUninit (void) {
+int32_t sdsioUninit (void) {
   iotSocketClose(socket);
   socket = -1;
   sdsioLockDelete();
   return SDSIO_OK;
 }
-
-// SDS I/O functions
 
 /**
   Open I/O stream
@@ -182,49 +182,37 @@ static int32_t sdsioUninit (void) {
 sdsioId_t sdsioOpen (const char *name, sdsioMode_t mode) {
   header_t header;
   uint32_t size;
-  int32_t  status   = SDSIO_OK;
   uint32_t sdsio_id = 0U;
 
   if (name != NULL) {
-    if (sdsio_cnt == 0U) {
-      status = sdsioInit();
-    }
+    sdsioLock();
 
-    if (status == SDSIO_OK) {
-      sdsioLock();
+    header.command   = SDSIO_CMD_OPEN;
+    header.sdsio_id  = 0U;
+    header.argument  = mode;
+    header.data_size = strlen(name) + 1U;
 
-      header.command   = SDSIO_CMD_OPEN;
-      header.sdsio_id  = 0U;
-      header.argument  = mode;
-      header.data_size = strlen(name) + 1U;
+    // Send header
+    size = sizeof(header_t);
+    if (sdsioSend(&header, size) == size) {
 
-      // Send header
-      size = sizeof(header_t);
-      if (sdsioSend(&header, size) == size) {
+      // Send stream name
+      size = header.data_size;
+      if (sdsioSend(name, size) == size) {
 
-        // Send stream name
-        size = header.data_size;
-        if (sdsioSend(name, size) == size) {
-
-          // Receive header
-          size = sizeof(header_t);
-          if (sdsioReceive(&header, size) == size) {
-            if ((header.command   == SDSIO_CMD_OPEN) &&
-                (header.argument  == mode)           &&
-                (header.data_size == 0U)) {
-              sdsio_id = header.sdsio_id;
-              sdsio_cnt++;
-            }
+        // Receive header
+        size = sizeof(header_t);
+        if (sdsioReceive(&header, size) == size) {
+          if ((header.command   == SDSIO_CMD_OPEN) &&
+              (header.argument  == mode)           &&
+              (header.data_size == 0U)) {
+            sdsio_id = header.sdsio_id;
           }
         }
       }
-
-      sdsioUnLock();
-
-      if ((sdsio_id == 0U) && (sdsio_cnt == 0U)) {
-        sdsioUninit();
-      }
     }
+
+    sdsioUnLock();
   }
 
   return (sdsioId_t)sdsio_id;
@@ -244,8 +232,9 @@ int32_t sdsioClose (sdsioId_t id) {
   uint32_t size;
   int32_t  ret = SDSIO_ERROR;
 
-  sdsioLock();
   if (id != NULL) {
+    sdsioLock();
+
     header.command   = SDSIO_CMD_CLOSE;
     header.sdsio_id  = (uint32_t)id;
     header.argument  = 0U;
@@ -255,15 +244,11 @@ int32_t sdsioClose (sdsioId_t id) {
     size = sizeof(header_t);
     if (sdsioSend(&header, size) == size) {
       ret = SDSIO_OK;
-      sdsio_cnt--;
     }
-  }
-  sdsioUnLock();
 
-  if (sdsio_cnt == 0U) {
-    sdsioUninit();
+    sdsioUnLock();
   }
-
+  
   return ret;
 }
 
@@ -281,8 +266,9 @@ uint32_t sdsioWrite (sdsioId_t id, const void *buf, uint32_t buf_size) {
   uint32_t size;
   uint32_t num = 0U;
 
-  sdsioLock();
   if ((id != NULL) && (buf != NULL) && (buf_size != 0U)) {
+    sdsioLock();
+
     header.command   = SDSIO_CMD_WRITE;
     header.sdsio_id  = (uint32_t)id;
     header.argument  = 0U;
@@ -297,8 +283,9 @@ uint32_t sdsioWrite (sdsioId_t id, const void *buf, uint32_t buf_size) {
         num = buf_size;
       }
     }
+
+    sdsioUnLock();
   }
-  sdsioUnLock();
 
   return num;
 }
@@ -323,8 +310,9 @@ uint32_t sdsioRead (sdsioId_t id, void *buf, uint32_t buf_size) {
   uint32_t size;
   uint32_t num = 0U;
 
-  sdsioLock();
   if ((id != NULL) && (buf != NULL) && (buf_size != 0U)) {
+    sdsioLock();
+
     header.command   = SDSIO_CMD_READ;
     header.sdsio_id  = (uint32_t)id;
     header.argument  = buf_size;
@@ -348,8 +336,9 @@ uint32_t sdsioRead (sdsioId_t id, void *buf, uint32_t buf_size) {
         }
       }
     }
+
+    sdsioUnLock();
   }
-  sdsioUnLock();
 
   return num;
 }
