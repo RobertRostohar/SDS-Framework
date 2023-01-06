@@ -250,7 +250,7 @@ int32_t sdsRecClose (sdsRecId_t id) {
     sdsClose(rec->stream);
     sdsioClose(rec->sdsio);
     sdsRecFree(rec);
-    sdsRecUnLock(); 
+    sdsRecUnLock();
 
     ret = SDS_OK;
   }

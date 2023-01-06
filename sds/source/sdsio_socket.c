@@ -248,7 +248,7 @@ int32_t sdsioClose (sdsioId_t id) {
 
     sdsioUnLock();
   }
-  
+
   return ret;
 }
 
