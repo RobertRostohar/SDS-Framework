@@ -42,7 +42,7 @@ typedef void *sdsRecId_t;
 typedef void (*sdsRecEvent_t) (sdsRecId_t id, uint32_t event);
 
 /**
-  \fn          int32_t sdsRecInit (void)
+  \fn          int32_t sdsRecInit (sdsRecEvent_t event_cb)
   \brief       Initialize recorder.
   \param[in]   event_cb       pointer to \ref sdsRecEvent_t
   \return      return code
