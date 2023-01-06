@@ -32,14 +32,6 @@
 #ifndef SDS_REC_MAX_RECORD_SIZE
 #define SDS_REC_MAX_RECORD_SIZE 1024U
 #endif
-#ifdef  SDSIO_NO_BUFFER
-#ifndef SDSIO_HEADER_SIZE
-#define SDSIO_HEADER_SIZE       32U
-#endif
-#ifndef SDSIO_TAIL_SIZE
-#define SDSIO_TAIL_SIZE         0U
-#endif
-#endif
 
 #if SDS_REC_MAX_STREAMS > 31
 #error "Maximmum number of SDS Recorder streams is 31!"
@@ -63,13 +55,7 @@ typedef struct {
 } RecHead_t;
 
 // Record buffer
-#ifndef SDSIO_NO_BUFFER
-static uint8_t   RecBuf[SDS_REC_MAX_RECORD_SIZE];
-static uint8_t *pRecBuf = &RecBuf[0];
-#else
-static uint8_t   RecBuf[SDS_REC_MAX_RECORD_SIZE + SDSIO_HEADER_SIZE + SDSIO_TAIL_SIZE];
-static uint8_t *pRecBuf = &RecBuf[SDSIO_HEADER_SIZE];
-#endif
+static uint8_t RecBuf[SDS_REC_MAX_RECORD_SIZE];
 
 // Event callback
 static sdsRecEvent_t sdsRecEvent = NULL;
@@ -159,9 +145,9 @@ static __NO_RETURN void sdsRecThread (void *arg) {
         if (flags & (1U << n)) {
           rec = pRecStreams[n];
           if (rec != NULL) {
-            cnt = sdsRead(rec->stream, pRecBuf, SDS_REC_MAX_RECORD_SIZE);
+            cnt = sdsRead(rec->stream, RecBuf, SDS_REC_MAX_RECORD_SIZE);
             if (cnt != 0U) {
-              if (sdsioWrite(rec->sdsio, pRecBuf, cnt) != cnt) {
+              if (sdsioWrite(rec->sdsio, RecBuf, cnt) != cnt) {
                 if (sdsRecEvent != NULL) {
                   sdsRecEvent(rec, SDS_REC_EVENT_IO_ERROR);
                 }
@@ -257,9 +243,9 @@ int32_t sdsRecClose (sdsRecId_t id) {
 
   if (rec != NULL) {
     sdsRecLock();
-    cnt = sdsRead(rec->stream, pRecBuf, SDS_REC_MAX_RECORD_SIZE);
+    cnt = sdsRead(rec->stream, RecBuf, SDS_REC_MAX_RECORD_SIZE);
     if (cnt != 0U) {
-      sdsioWrite(rec->sdsio, pRecBuf, cnt);
+      sdsioWrite(rec->sdsio, RecBuf, cnt);
     }
     sdsClose(rec->stream);
     sdsioClose(rec->sdsio);
