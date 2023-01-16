@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2020 Arm Limited. All rights reserved.
+ * Copyright (c) 2009-2021 Arm Limited. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -22,6 +22,9 @@
  */
 
 #include "cmsis.h"
+#ifndef ARM_VHT
+#define ARM_VHT
+#endif
 
 /*----------------------------------------------------------------------------
   Exception / Interrupt Handler Function Prototype
@@ -164,6 +167,17 @@ DEFAULT_IRQ_HANDLER(GPIO3_3_Handler)
 DEFAULT_IRQ_HANDLER(UARTRX5_Handler)
 DEFAULT_IRQ_HANDLER(UARTTX5_Handler)
 DEFAULT_IRQ_HANDLER(UART5_Handler)
+
+#ifdef ARM_VHT
+DEFAULT_IRQ_HANDLER(ARM_VSI0_Handler)
+DEFAULT_IRQ_HANDLER(ARM_VSI1_Handler)
+DEFAULT_IRQ_HANDLER(ARM_VSI2_Handler)
+DEFAULT_IRQ_HANDLER(ARM_VSI3_Handler)
+DEFAULT_IRQ_HANDLER(ARM_VSI4_Handler)
+DEFAULT_IRQ_HANDLER(ARM_VSI5_Handler)
+DEFAULT_IRQ_HANDLER(ARM_VSI6_Handler)
+DEFAULT_IRQ_HANDLER(ARM_VSI7_Handler)
+#endif
 
 /*----------------------------------------------------------------------------
   Exception / Interrupt Vector table
@@ -326,6 +340,118 @@ extern const pFunc __VECTOR_TABLE[496];
   0,                                /*  128: Reserved */
   0,                                /*  129: Reserved */
   0,                                /*  130: Reserved */
+  0,                                /*  131: Reserved */
+  0,                                /*  132: Reserved */
+  0,                                /*  133: Reserved */
+  0,                                /*  134: Reserved */
+  0,                                /*  135: Reserved */
+  0,                                /*  136: Reserved */
+  0,                                /*  137: Reserved */
+  0,                                /*  138: Reserved */
+  0,                                /*  139: Reserved */
+  0,                                /*  140: Reserved */
+  0,                                /*  141: Reserved */
+  0,                                /*  142: Reserved */
+  0,                                /*  143: Reserved */
+  0,                                /*  144: Reserved */
+  0,                                /*  145: Reserved */
+  0,                                /*  146: Reserved */
+  0,                                /*  147: Reserved */
+  0,                                /*  148: Reserved */
+  0,                                /*  149: Reserved */
+  0,                                /*  150: Reserved */
+  0,                                /*  151: Reserved */
+  0,                                /*  152: Reserved */
+  0,                                /*  153: Reserved */
+  0,                                /*  154: Reserved */
+  0,                                /*  155: Reserved */
+  0,                                /*  156: Reserved */
+  0,                                /*  157: Reserved */
+  0,                                /*  158: Reserved */
+  0,                                /*  159: Reserved */
+  0,                                /*  160: Reserved */
+  0,                                /*  161: Reserved */
+  0,                                /*  162: Reserved */
+  0,                                /*  163: Reserved */
+  0,                                /*  164: Reserved */
+  0,                                /*  165: Reserved */
+  0,                                /*  166: Reserved */
+  0,                                /*  167: Reserved */
+  0,                                /*  168: Reserved */
+  0,                                /*  169: Reserved */
+  0,                                /*  170: Reserved */
+  0,                                /*  171: Reserved */
+  0,                                /*  172: Reserved */
+  0,                                /*  173: Reserved */
+  0,                                /*  174: Reserved */
+  0,                                /*  175: Reserved */
+  0,                                /*  176: Reserved */
+  0,                                /*  177: Reserved */
+  0,                                /*  178: Reserved */
+  0,                                /*  179: Reserved */
+  0,                                /*  180: Reserved */
+  0,                                /*  181: Reserved */
+  0,                                /*  182: Reserved */
+  0,                                /*  183: Reserved */
+  0,                                /*  184: Reserved */
+  0,                                /*  185: Reserved */
+  0,                                /*  186: Reserved */
+  0,                                /*  187: Reserved */
+  0,                                /*  188: Reserved */
+  0,                                /*  189: Reserved */
+  0,                                /*  190: Reserved */
+  0,                                /*  191: Reserved */
+  0,                                /*  192: Reserved */
+  0,                                /*  193: Reserved */
+  0,                                /*  194: Reserved */
+  0,                                /*  195: Reserved */
+  0,                                /*  196: Reserved */
+  0,                                /*  197: Reserved */
+  0,                                /*  198: Reserved */
+  0,                                /*  199: Reserved */
+  0,                                /*  200: Reserved */
+  0,                                /*  201: Reserved */
+  0,                                /*  202: Reserved */
+  0,                                /*  203: Reserved */
+  0,                                /*  204: Reserved */
+  0,                                /*  205: Reserved */
+  0,                                /*  206: Reserved */
+  0,                                /*  207: Reserved */
+  0,                                /*  208: Reserved */
+  0,                                /*  209: Reserved */
+  0,                                /*  210: Reserved */
+  0,                                /*  211: Reserved */
+  0,                                /*  212: Reserved */
+  0,                                /*  213: Reserved */
+  0,                                /*  214: Reserved */
+  0,                                /*  215: Reserved */
+  0,                                /*  216: Reserved */
+  0,                                /*  217: Reserved */
+  0,                                /*  218: Reserved */
+  0,                                /*  219: Reserved */
+  0,                                /*  220: Reserved */
+  0,                                /*  221: Reserved */
+  0,                                /*  222: Reserved */
+  0,                                /*  223: Reserved */
+#ifdef ARM_VHT
+  ARM_VSI0_Handler,                 /*  224: VSI 0 Interrupt */
+  ARM_VSI1_Handler,                 /*  225: VSI 1 Interrupt */
+  ARM_VSI2_Handler,                 /*  226: VSI 2 Interrupt */
+  ARM_VSI3_Handler,                 /*  227: VSI 3 Interrupt */
+  ARM_VSI4_Handler,                 /*  228: VSI 4 Interrupt */
+  ARM_VSI5_Handler,                 /*  229: VSI 5 Interrupt */
+  ARM_VSI6_Handler,                 /*  230: VSI 6 Interrupt */
+  ARM_VSI7_Handler                  /*  231: VSI 7 Interrupt */
+#else
+  0,                                /*  224: Reserved */
+  0,                                /*  225: Reserved */
+  0,                                /*  226: Reserved */
+  0,                                /*  227: Reserved */
+  0,                                /*  228: Reserved */
+  0,                                /*  229: Reserved */
+  0,                                /*  230: Reserved */
+  0                                 /*  231: Reserved */
+#endif
 };
 
 #if defined ( __GNUC__ )
