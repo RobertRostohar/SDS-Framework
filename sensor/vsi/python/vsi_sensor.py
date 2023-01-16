@@ -24,26 +24,51 @@ from struct import unpack
 
 class RecordManager:
     def __init__(self):
-        self.HEADER_SIZE    = 8
-        self.TIMESTAMP_SIZE = 4
-        self.data_buff = bytearray()
+        self.WINDOW_SIZE        = 10000 #ms
+        self.SLIDE_INTERVAL     = 1000  #ms
+        self.HEADER_SIZE        = 8     #B
+        self.TIMESTAMP_SIZE     = 4     #B
+        self.data_buff          = bytearray()
+        self.timestamp          = []
+        self.data_size          = []
+        self.interval           = 0
+        self.window             = 0
+        self.cnt                = 0
+        self.cnt_old            = 0
+        self.elapsed_time       = 0
+        self.timer_event_cnt    = 0
+        self.initial_interval   = 0
+        self.active_record_size = 0
 
+    # Flush variables
     def flush(self):
         logging.info("Flush Record Data")
-        self.data_buff = bytearray()
+        self.data_buff          = bytearray()
+        self.timestamp          = []
+        self.data_size          = []
+        self.interval           = 0
+        self.window             = 0
+        self.cnt                = 0
+        self.cnt_old            = 0
+        self.elapsed_time       = 0
+        self.timer_event_cnt    = 0
+        self.initial_interval   = 0
+        self.active_record_size = 0
 
+    # Read one Record from data file and save acquired data in corresponding buffers
     def __getRecord(self):
         logging.info("Get Record Data")
         data = readFile(self.HEADER_SIZE)
         if len(data) == self.HEADER_SIZE:
-            timestamp = unpack("I", data[:self.TIMESTAMP_SIZE])[0]
-            data_size = unpack("I", data[self.TIMESTAMP_SIZE:])[0]
-            self.data_buff = readFile(data_size)
+            self.timestamp.append(unpack("I", data[:self.TIMESTAMP_SIZE])[0])
+            self.data_size.append(unpack("I", data[self.TIMESTAMP_SIZE:])[0])
+            self.data_buff.extend(readFile(self.data_size[-1]))
             logging.debug(f"Record Data size: {len(self.data_buff)}")
         else:
             logging.info("No Record")
-            self.data_buff = bytearray()
 
+    # Extract requested number of bytes from data buffer
+    # If end of file is reached, return requested number of zeroes
     def getData(self, size):
         logging.info("Get Data from Record")
 
@@ -54,22 +79,107 @@ class RecordManager:
             data = self.data_buff[:size]
             self.data_buff = self.data_buff[size:]
             logging.debug(f"Requested Data size: {size}")
+
+            if self.active_record_size == 0:
+                self.active_record_size = self.data_size[self.cnt]
+                self.cnt += 1
+            self.active_record_size -= size
         else:
             logging.info("No Data in Record")
             data = bytearray(size)
 
         return data
 
+    # Read data file until current and last timestamp are at least WINDOW_SIZE apart
+    # or end of file is reached
+    def __getWindow(self):
+        window = 0
+        old_timestamp_num = 0
+        logging.info("Get Time window")
+        while True:
+            if len(self.timestamp) == 0:
+                self.__getRecord()
+
+            if len(self.timestamp) == old_timestamp_num:
+                break
+            else:
+                old_timestamp_num = len(self.timestamp)
+
+            t0 = self.timestamp[self.cnt]
+            t1 = self.timestamp[-1]
+            window = t1 - t0
+            if window >= self.WINDOW_SIZE:
+                break
+            else:
+                self.__getRecord()
+
+        self.window = window
+        logging.debug(f"Window size: {self.window} ms")
+
+    # Calculate average interval based on number of samples/blocks in current time window
+    def __getInterval(self):
+        logging.info("Calculate new Interval")
+        if (CONTROL & CONTROL_DMA_Msk) == 1:
+            size = FIFO_SIZE
+        else:
+            size = SAMPLE_SIZE
+
+        num = int(sum(self.data_size[self.cnt:-1])/size)
+
+        if num > 0:
+            self.interval = round((self.window * 1000)/num)
+            logging.debug(f"Number of Samples/Blocks: {num}")
+
+            # Compensate for time drift
+            record_elapsed_time = (self.timestamp[self.cnt] - self.timestamp[0]) * 1000
+            if self.elapsed_time != record_elapsed_time:
+                interval_correction = round((self.elapsed_time - record_elapsed_time)/num)
+                self.interval -= interval_correction #us
+        else:
+            self.interval = 0
+
+    # Calculate new average timer interval when current record timestamp is at least
+    # SLIDE_INTERVAL ahead of last timestamp used for updating the timer
+    def updateTimer(self, interval):
+        logging.info("Update AVH TimerEvent interval")
+        if len(self.timestamp) > self.cnt:
+            time_delta = self.timestamp[self.cnt] - self.timestamp[self.cnt_old]
+        elif len(self.timestamp) == 0:
+            time_delta = self.SLIDE_INTERVAL
+        else:
+            time_delta = 0
+
+        if time_delta >= self.SLIDE_INTERVAL:
+            self.__getWindow()
+            self.__getInterval()
+            self.cnt_old = self.cnt
+
+        if self.timer_event_cnt == 0:
+            self.initial_interval = interval
+        if self.interval > 0:
+            interval = self.interval
+
+        return interval
+
+    # Track AVH time based on timerEvent() calls and current interval setting
+    def trackTime(self):
+        if self.timer_event_cnt < 2:
+            # Initial interval is used for first two timerEvent() calls
+            self.elapsed_time += self.initial_interval
+            self.timer_event_cnt += 1
+        else:
+            self.elapsed_time += self.interval
+
 
 class FifoBuff:
     def __init__(self, buff_size, threshold_size):
-        self.data = bytearray(buff_size)
-        self.buff_size = buff_size
+        self.data           = bytearray(buff_size)
+        self.buff_size      = buff_size
         self.threshold_size = threshold_size
-        self.threshold = 0
-        self.idx_put = 0
-        self.idx_get = 0
-        self.count = 0
+        self.threshold      = 0
+        self.idx_put        = 0
+        self.idx_get        = 0
+        self.count          = 0
 
     def put(self, byte):
         logging.info("Put byte in FIFO")
@@ -192,12 +302,22 @@ def wrIRQ(IRQ_Status, value):
     return IRQ_Status
 
 
+## Write VSI Timer Register
+#  @param value value to write (32-bit)
+#  @return value value written (32-bit)
+def wrTimerInterval(value):
+    if (CONTROL & CONTROL_ENABLE_Msk) != 0:
+        value = Record.updateTimer(value)
+    return value
+
+
 ## Timer Event
 # @param IRQ_Status IRQ status register to update
 # @return IRQ_Status return updated register
 def timerEvent(IRQ_Status):
     global STATUS
 
+    Record.trackTime()
     if (CONTROL & CONTROL_DMA_Msk) == 0:
         data = Record.getData(SAMPLE_SIZE)
         for b in range(SAMPLE_SIZE):
@@ -368,6 +488,8 @@ def wrRegs(index, value):
     elif index == 7:
         value = SAMPLE_PORT
     elif index == 8:
+        if value == 0:
+            value = 1
         DATA_THRESHOLD = value
     elif index == 9:
         if value == 0:
