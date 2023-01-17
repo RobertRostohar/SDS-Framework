@@ -94,6 +94,7 @@ void ARM_VSI0_Handler (void) {
 
   event = ARM_VSI0->IRQ.Status;
   ARM_VSI0->IRQ.Clear = event;
+  ARM_VSI0->Timer.Interval = SENSOR0_SAMPLE_INTERVAL;
   __DSB();
   __ISB();
 
@@ -168,19 +169,18 @@ static int32_t RegisterEvents_0 (sensorId_t id, sensorEvent_t event_cb, uint32_t
 static int32_t Enable_0 (void) {
   int32_t ret = SENSOR_ERROR;
 
-  #if (SENSOR0_DMA_MODE == 0U)
     ARM_VSI0->SAMPLE_SIZE    = SENSOR0_SAMPLE_SIZE;
+  #if (SENSOR0_DMA_MODE == 0U)
     ARM_VSI0->DATA_THRESHOLD = SENSOR0_DATA_THRESHOLD;
     ARM_VSI0->FIFO_SIZE      = SENSOR0_FIFO_SIZE;
     ARM_VSI0->CONTROL        = CONTROL_ENABLE_Msk;
     ARM_VSI0->Timer.Interval = SENSOR0_SAMPLE_INTERVAL;
     ARM_VSI0->Timer.Control  = ARM_VSI_Timer_Periodic_Msk |
-                             #if (SENSOR0_DATA_THRESHOLD != 0U)
                                ARM_VSI_Timer_Trig_IRQ_Msk |
-                             #endif
                                ARM_VSI_Timer_Run_Msk;
     ret = SENSOR_OK;
   #else
+    ARM_VSI0->FIFO_SIZE      = SENSOR0_BLOCK_SIZE;
     ARM_VSI0->CONTROL        = CONTROL_ENABLE_Msk |
                                CONTROL_DMA_Msk;
     BlockCnt_0               = 0U;
@@ -309,6 +309,7 @@ void ARM_VSI1_Handler (void) {
 
   event = ARM_VSI1->IRQ.Status;
   ARM_VSI1->IRQ.Clear = event;
+  ARM_VSI1->Timer.Interval = SENSOR1_SAMPLE_INTERVAL;
   __DSB();
   __ISB();
 
@@ -383,19 +384,18 @@ static int32_t RegisterEvents_1 (sensorId_t id, sensorEvent_t event_cb, uint32_t
 static int32_t Enable_1 (void) {
   int32_t ret = SENSOR_ERROR;
 
-  #if (SENSOR1_DMA_MODE == 0U)
     ARM_VSI1->SAMPLE_SIZE    = SENSOR1_SAMPLE_SIZE;
+  #if (SENSOR1_DMA_MODE == 0U)
     ARM_VSI1->DATA_THRESHOLD = SENSOR1_DATA_THRESHOLD;
     ARM_VSI1->FIFO_SIZE      = SENSOR1_FIFO_SIZE;
     ARM_VSI1->CONTROL        = CONTROL_ENABLE_Msk;
     ARM_VSI1->Timer.Interval = SENSOR1_SAMPLE_INTERVAL;
     ARM_VSI1->Timer.Control  = ARM_VSI_Timer_Periodic_Msk |
-                             #if (SENSOR1_DATA_THRESHOLD != 0U)
                                ARM_VSI_Timer_Trig_IRQ_Msk |
-                             #endif
                                ARM_VSI_Timer_Run_Msk;
     ret = SENSOR_OK;
   #else
+    ARM_VSI1->FIFO_SIZE      = SENSOR1_BLOCK_SIZE;
     ARM_VSI1->CONTROL        = CONTROL_ENABLE_Msk |
                                CONTROL_DMA_Msk;
     BlockCnt_1               = 0U;
@@ -524,6 +524,7 @@ void ARM_VSI2_Handler (void) {
 
   event = ARM_VSI2->IRQ.Status;
   ARM_VSI2->IRQ.Clear = event;
+  ARM_VSI2->Timer.Interval = SENSOR2_SAMPLE_INTERVAL;
   __DSB();
   __ISB();
 
@@ -598,19 +599,18 @@ static int32_t RegisterEvents_2 (sensorId_t id, sensorEvent_t event_cb, uint32_t
 static int32_t Enable_2 (void) {
   int32_t ret = SENSOR_ERROR;
 
-  #if (SENSOR2_DMA_MODE == 0U)
     ARM_VSI2->SAMPLE_SIZE    = SENSOR2_SAMPLE_SIZE;
+  #if (SENSOR2_DMA_MODE == 0U)
     ARM_VSI2->DATA_THRESHOLD = SENSOR2_DATA_THRESHOLD;
     ARM_VSI2->FIFO_SIZE      = SENSOR2_FIFO_SIZE;
     ARM_VSI2->CONTROL        = CONTROL_ENABLE_Msk;
     ARM_VSI2->Timer.Interval = SENSOR2_SAMPLE_INTERVAL;
     ARM_VSI2->Timer.Control  = ARM_VSI_Timer_Periodic_Msk |
-                             #if (SENSOR2_DATA_THRESHOLD != 0U)
                                ARM_VSI_Timer_Trig_IRQ_Msk |
-                             #endif
                                ARM_VSI_Timer_Run_Msk;
     ret = SENSOR_OK;
   #else
+    ARM_VSI2->FIFO_SIZE      = SENSOR2_BLOCK_SIZE;
     ARM_VSI2->CONTROL        = CONTROL_ENABLE_Msk |
                                CONTROL_DMA_Msk;
     BlockCnt_2               = 0U;
@@ -739,6 +739,7 @@ void ARM_VSI3_Handler (void) {
 
   event = ARM_VSI3->IRQ.Status;
   ARM_VSI3->IRQ.Clear = event;
+  ARM_VSI3->Timer.Interval = SENSOR3_SAMPLE_INTERVAL;
   __DSB();
   __ISB();
 
@@ -813,19 +814,18 @@ static int32_t RegisterEvents_3 (sensorId_t id, sensorEvent_t event_cb, uint32_t
 static int32_t Enable_3 (void) {
   int32_t ret = SENSOR_ERROR;
 
-  #if (SENSOR3_DMA_MODE == 0U)
     ARM_VSI3->SAMPLE_SIZE    = SENSOR3_SAMPLE_SIZE;
+  #if (SENSOR3_DMA_MODE == 0U)
     ARM_VSI3->DATA_THRESHOLD = SENSOR3_DATA_THRESHOLD;
     ARM_VSI3->FIFO_SIZE      = SENSOR3_FIFO_SIZE;
     ARM_VSI3->CONTROL        = CONTROL_ENABLE_Msk;
     ARM_VSI3->Timer.Interval = SENSOR3_SAMPLE_INTERVAL;
     ARM_VSI3->Timer.Control  = ARM_VSI_Timer_Periodic_Msk |
-                             #if (SENSOR3_DATA_THRESHOLD != 0U)
                                ARM_VSI_Timer_Trig_IRQ_Msk |
-                             #endif
                                ARM_VSI_Timer_Run_Msk;
     ret = SENSOR_OK;
   #else
+    ARM_VSI3->FIFO_SIZE      = SENSOR3_BLOCK_SIZE;
     ARM_VSI3->CONTROL        = CONTROL_ENABLE_Msk |
                                CONTROL_DMA_Msk;
     BlockCnt_3               = 0U;
@@ -954,6 +954,7 @@ void ARM_VSI4_Handler (void) {
 
   event = ARM_VSI4->IRQ.Status;
   ARM_VSI4->IRQ.Clear = event;
+  ARM_VSI4->Timer.Interval = SENSOR4_SAMPLE_INTERVAL;
   __DSB();
   __ISB();
 
@@ -1028,19 +1029,18 @@ static int32_t RegisterEvents_4 (sensorId_t id, sensorEvent_t event_cb, uint32_t
 static int32_t Enable_4 (void) {
   int32_t ret = SENSOR_ERROR;
 
-  #if (SENSOR4_DMA_MODE == 0U)
     ARM_VSI4->SAMPLE_SIZE    = SENSOR4_SAMPLE_SIZE;
+  #if (SENSOR4_DMA_MODE == 0U)
     ARM_VSI4->DATA_THRESHOLD = SENSOR4_DATA_THRESHOLD;
     ARM_VSI4->FIFO_SIZE      = SENSOR4_FIFO_SIZE;
     ARM_VSI4->CONTROL        = CONTROL_ENABLE_Msk;
     ARM_VSI4->Timer.Interval = SENSOR4_SAMPLE_INTERVAL;
     ARM_VSI4->Timer.Control  = ARM_VSI_Timer_Periodic_Msk |
-                             #if (SENSOR4_DATA_THRESHOLD != 0U)
                                ARM_VSI_Timer_Trig_IRQ_Msk |
-                             #endif
                                ARM_VSI_Timer_Run_Msk;
     ret = SENSOR_OK;
   #else
+    ARM_VSI4->FIFO_SIZE      = SENSOR4_BLOCK_SIZE;
     ARM_VSI4->CONTROL        = CONTROL_ENABLE_Msk |
                                CONTROL_DMA_Msk;
     BlockCnt_4               = 0U;
@@ -1169,6 +1169,7 @@ void ARM_VSI5_Handler (void) {
 
   event = ARM_VSI5->IRQ.Status;
   ARM_VSI5->IRQ.Clear = event;
+  ARM_VSI5->Timer.Interval = SENSOR5_SAMPLE_INTERVAL;
   __DSB();
   __ISB();
 
@@ -1243,19 +1244,18 @@ static int32_t RegisterEvents_5 (sensorId_t id, sensorEvent_t event_cb, uint32_t
 static int32_t Enable_5 (void) {
   int32_t ret = SENSOR_ERROR;
 
-  #if (SENSOR5_DMA_MODE == 0U)
     ARM_VSI5->SAMPLE_SIZE    = SENSOR5_SAMPLE_SIZE;
+  #if (SENSOR5_DMA_MODE == 0U)
     ARM_VSI5->DATA_THRESHOLD = SENSOR5_DATA_THRESHOLD;
     ARM_VSI5->FIFO_SIZE      = SENSOR5_FIFO_SIZE;
     ARM_VSI5->CONTROL        = CONTROL_ENABLE_Msk;
     ARM_VSI5->Timer.Interval = SENSOR5_SAMPLE_INTERVAL;
     ARM_VSI5->Timer.Control  = ARM_VSI_Timer_Periodic_Msk |
-                             #if (SENSOR5_DATA_THRESHOLD != 0U)
                                ARM_VSI_Timer_Trig_IRQ_Msk |
-                             #endif
                                ARM_VSI_Timer_Run_Msk;
     ret = SENSOR_OK;
   #else
+    ARM_VSI5->FIFO_SIZE      = SENSOR5_BLOCK_SIZE;
     ARM_VSI5->CONTROL        = CONTROL_ENABLE_Msk |
                                CONTROL_DMA_Msk;
     BlockCnt_5               = 0U;
@@ -1384,6 +1384,7 @@ void ARM_VSI6_Handler (void) {
 
   event = ARM_VSI6->IRQ.Status;
   ARM_VSI6->IRQ.Clear = event;
+  ARM_VSI6->Timer.Interval = SENSOR6_SAMPLE_INTERVAL;
   __DSB();
   __ISB();
 
@@ -1458,19 +1459,18 @@ static int32_t RegisterEvents_6 (sensorId_t id, sensorEvent_t event_cb, uint32_t
 static int32_t Enable_6 (void) {
   int32_t ret = SENSOR_ERROR;
 
-  #if (SENSOR6_DMA_MODE == 0U)
     ARM_VSI6->SAMPLE_SIZE    = SENSOR6_SAMPLE_SIZE;
+  #if (SENSOR6_DMA_MODE == 0U)
     ARM_VSI6->DATA_THRESHOLD = SENSOR6_DATA_THRESHOLD;
     ARM_VSI6->FIFO_SIZE      = SENSOR6_FIFO_SIZE;
     ARM_VSI6->CONTROL        = CONTROL_ENABLE_Msk;
     ARM_VSI6->Timer.Interval = SENSOR6_SAMPLE_INTERVAL;
     ARM_VSI6->Timer.Control  = ARM_VSI_Timer_Periodic_Msk |
-                             #if (SENSOR6_DATA_THRESHOLD != 0U)
                                ARM_VSI_Timer_Trig_IRQ_Msk |
-                             #endif
                                ARM_VSI_Timer_Run_Msk;
     ret = SENSOR_OK;
   #else
+    ARM_VSI6->FIFO_SIZE      = SENSOR6_BLOCK_SIZE;
     ARM_VSI6->CONTROL        = CONTROL_ENABLE_Msk |
                                CONTROL_DMA_Msk;
     BlockCnt_6               = 0U;
@@ -1599,6 +1599,7 @@ void ARM_VSI7_Handler (void) {
 
   event = ARM_VSI7->IRQ.Status;
   ARM_VSI7->IRQ.Clear = event;
+  ARM_VSI7->Timer.Interval = SENSOR7_SAMPLE_INTERVAL;
   __DSB();
   __ISB();
 
@@ -1673,19 +1674,18 @@ static int32_t RegisterEvents_7 (sensorId_t id, sensorEvent_t event_cb, uint32_t
 static int32_t Enable_7 (void) {
   int32_t ret = SENSOR_ERROR;
 
-  #if (SENSOR7_DMA_MODE == 0U)
     ARM_VSI7->SAMPLE_SIZE    = SENSOR7_SAMPLE_SIZE;
+  #if (SENSOR7_DMA_MODE == 0U)
     ARM_VSI7->DATA_THRESHOLD = SENSOR7_DATA_THRESHOLD;
     ARM_VSI7->FIFO_SIZE      = SENSOR7_FIFO_SIZE;
     ARM_VSI7->CONTROL        = CONTROL_ENABLE_Msk;
     ARM_VSI7->Timer.Interval = SENSOR7_SAMPLE_INTERVAL;
     ARM_VSI7->Timer.Control  = ARM_VSI_Timer_Periodic_Msk |
-                             #if (SENSOR7_DATA_THRESHOLD != 0U)
                                ARM_VSI_Timer_Trig_IRQ_Msk |
-                             #endif
                                ARM_VSI_Timer_Run_Msk;
     ret = SENSOR_OK;
   #else
+    ARM_VSI7->FIFO_SIZE      = SENSOR7_BLOCK_SIZE;
     ARM_VSI7->CONTROL        = CONTROL_ENABLE_Msk |
                                CONTROL_DMA_Msk;
     BlockCnt_7               = 0U;
