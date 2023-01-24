@@ -29,7 +29,7 @@ solution:
           - -O1
           - -g
         - C:
-          - -std=c99
+          - -std=c11
         - ASM:
           - -masm=auto
         - Link:
@@ -40,7 +40,7 @@ solution:
         - C-CPP:
           - -O3
         - C:
-          - -std=c99
+          - -std=c11
         - ASM:
           - -masm=auto
         - Link:
