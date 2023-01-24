@@ -26,7 +26,12 @@ Demo is available for the following targets:
  - [python 3.9 or later](https://www.python.org/downloads/windows/)
 
 ### CMSIS Packs:
- - Required packs are listed in the file [`Demo.csolution.yml`](./Demo.csolution.yml)
+ - Required packs are listed in the file [`Demo.csolution.yml`](./Demo.csolution.yml)  
+   Packs can be installed by executing the following `csolution` and `cpackget` commands:
+   ```
+   csolution list packs -s Demo.csolution.yml -m >packs.txt
+   cpackget add -f packs.txt
+   ```
 
 ## Configure
 
