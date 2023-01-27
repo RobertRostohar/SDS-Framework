@@ -1,10 +1,13 @@
 # SDS-Convert
-Convert SDS data recordings to selected CSV format, based on descriptions found in YAML files.
+Convert SDS data recordings to selected format, based on descriptions found in YAML files.
 
 Note that YAML and SDS file pairs must be passed as arguments in the same order to ensure recorded data
 is decoded correctly.
 
-### [Qeexo format V2](https://docs.qeexo.com/guides/userguides/data-management#2-1-Data-format-specification)
+## Supported formats
+### [Qeexo V2 CSV format](https://docs.qeexo.com/guides/userguides/data-management#2-1-Data-format-specification)
+Format flag: `-f qeexo_v2_csv`
+
 By default interval of 50 ms is used for timestamp increments. User can override this setting by
 passing number of ms after `--interval` flag. User can also define text in label column by passing a string
 after `--label` flag.
@@ -41,7 +44,7 @@ Print help with:
 python sds-convert.py --help
 ```
 ### Run tool
-To convert data into CSV format run:
+To convert data into selected format run:
 ```
-python sds-convert.py -y <description_filename>.yml [<description_filename2>.yml ...] -s <sds_data_filename>.sds [<sds_data_filename2>.sds ...] -o <output_filename>.csv -f <csv_format> [--label <label>] [--interval <interval_ms>]
+python sds-convert.py -y <description_filename>.yml [<description_filename2>.yml ...] -s <sds_data_filename>.sds [<sds_data_filename2>.sds ...] -o <output_file> -f <format> [--label <label>] [--interval <interval_ms>]
 ```

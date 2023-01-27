@@ -209,8 +209,18 @@ def writeCSV(interval, data, meta_data, data_label):
                 tmp_data = tmp_data[desc_n::desc_n_max]
                 # Decode retrieved data points
                 tmp_data = list(unpack(f"{int(len(tmp_data))}{d_type}", b''.join(tmp_data)))
+                # Scale and offset data points
+                if "scale" in channel:
+                    scale = channel["scale"]
+                else:
+                    scale = 1
+                if "offset" in channel:
+                    offset = channel["offset"]
+                else:
+                    offset = 0
+                scaled_data = [((x * scale) + offset) for x in tmp_data]
                 # Store decoded data in a dictionary
-                sensor_data[desc_n] = tmp_data
+                sensor_data[desc_n] = scaled_data
                 # Increment channel description number
                 desc_n += 1
 
@@ -240,17 +250,17 @@ def writeCSV(interval, data, meta_data, data_label):
 
 # Main function
 def main():
-    parser = argparse.ArgumentParser(description="Convert SDS data to CSV")
+    parser = argparse.ArgumentParser(description="Convert SDS data to selected format")
 
     required = parser.add_argument_group("required")
     required.add_argument("-y", "--yaml", help="YAML sensor description file", nargs="+", required=True)
     required.add_argument("-s", "--sds", help="SDS data recording file", nargs="+", required=True)
-    required.add_argument("-o", "--out", help="CSV output file", required=True)
-    required.add_argument("-f", "--format", help="Output data CSV format", choices=["qeexo_v2"], required=True)
+    required.add_argument("-o", "--out", help="Output file", required=True)
+    required.add_argument("-f", "--format", help="Output data format", choices=["qeexo_v2_csv"], required=True)
 
     optional = parser.add_argument_group("optional")
-    optional.add_argument("--label", help="Class label for sensor data", default='')
-    optional.add_argument("--interval", help="Timestamp interval in ms", type=int, default=50)
+    optional.add_argument("--label", help="Qeexo class label for sensor data", default='')
+    optional.add_argument("--interval", help="Qeexo timestamp interval in ms", type=int, default=50)
 
     args = parser.parse_args()
 
