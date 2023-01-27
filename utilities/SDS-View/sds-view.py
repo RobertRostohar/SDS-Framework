@@ -137,9 +137,7 @@ def plotData(all_data, data_desc, freq, title):
         # Generate timestamps using number of data points and sampling frequency
         t = np.arange(0, len(data) / freq, 1 / freq)
         if len(t) > len(data):
-            # We ended up with some odd round-off on the number of data points
-            # truncate timestamps back down to match the number of data points 
-            # so Matplotlib works.
+            # Truncate timestamps to match the number of data points
             t = t[0:len(data)]
         plt.plot(t, scaled_data, label=desc["value"])
 
