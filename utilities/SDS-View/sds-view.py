@@ -39,8 +39,8 @@ class RecordManager:
     def __getRecord(self, file):
         record = bytearray(file.read(self.HEADER_SIZE))
         if len(record) == self.HEADER_SIZE:
-            timestamp = struct.unpack("i", record[:self.TIMESTAMP_SIZE])[0]
-            data_size = struct.unpack("i", record[self.TIMESTAMP_SIZE:])[0]
+            timestamp = struct.unpack("I", record[:self.TIMESTAMP_SIZE])[0]
+            data_size = struct.unpack("I", record[self.TIMESTAMP_SIZE:])[0]
             self.data.extend(bytearray(file.read(data_size)))
             return True
         else:
