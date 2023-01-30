@@ -69,66 +69,66 @@ class RecordManager:
 
 # Convert C style data type to Python style
 def getDataType(data_type):
-    match data_type:
-        case "int16_t":
-            d_type = "h"
-        case "uint16_t":
-            d_type = "H"
-        case "int32_t":
-            d_type = "i"
-        case "uint32_t":
-            d_type = "I"
-        case "float":
-            d_type = "f"
-        case "double":
-            d_type = "d"
-        case _:
-            print(f"Unknown data type: {data_type}\n")
-            d_type = "I"
+    if   data_type == "int16_t":
+        d_type = "h"
+    elif data_type == "uint16_t":
+        d_type = "H"
+    elif data_type == "int32_t":
+        d_type = "i"
+    elif data_type == "uint32_t":
+        d_type = "I"
+    elif data_type == "float":
+        d_type = "f"
+    elif data_type == "double":
+        d_type = "d"
+    else:
+        print(f"Unknown data type: {data_type}\n")
+        d_type = "I"
+
     return d_type
 
 # Select correct Qeexo sensor data name
 def qeexoColumnName(sensor):
     sensor_name = sensor.strip('./\\').split('.')[0]
-    match sensor_name:
-        case 'Accelerometer':
-            qeexo_name = 'accel'
-        case 'Gyroscope':
-            qeexo_name = 'gyro'
-        case 'Magnometer':
-            qeexo_name = 'magno'
-        case 'Temperature':
-            qeexo_name = 'temperature'
-        case 'Humidity':
-            qeexo_name = 'humidity'
-        case 'Pressure':
-            qeexo_name = 'pressure'
-        case 'Microphone':
-            qeexo_name = 'microphone'
-        case 'Analog microphone':
-            qeexo_name = 'microphone_analog'
-        case 'Light':
-            qeexo_name = 'light'
-        case 'Ambient light':
-            qeexo_name = 'ambient'
-        case 'RCDA':
-            qeexo_name = 'rcda'
-        case 'ETOH':
-            qeexo_name = 'etoh'
-        case 'TVOC':
-            qeexo_name = 'tvoc'
-        case 'IAQ':
-            qeexo_name = 'iaq'
-        case 'ECO2':
-            qeexo_name = 'eco2'
-        case 'RMOX':
-            qeexo_name = 'rmox'
-        case 'Low power accelerometer':
-            qeexo_name = 'accel_lowpower'
-        case 'High sensitivity accelerometer':
-            qeexo_name = 'accel_highsensitive'
-        case _:
-            qeexo_name = sensor_name.lower()
+    if   sensor_name == 'Accelerometer':
+        qeexo_name = 'accel'
+    elif sensor_name == 'Gyroscope':
+        qeexo_name = 'gyro'
+    elif sensor_name == 'Magnometer':
+        qeexo_name = 'magno'
+    elif sensor_name == 'Temperature':
+        qeexo_name = 'temperature'
+    elif sensor_name == 'Humidity':
+        qeexo_name = 'humidity'
+    elif sensor_name == 'Pressure':
+        qeexo_name = 'pressure'
+    elif sensor_name == 'Microphone':
+        qeexo_name = 'microphone'
+    elif sensor_name == 'Analog microphone':
+        qeexo_name = 'microphone_analog'
+    elif sensor_name == 'Light':
+        qeexo_name = 'light'
+    elif sensor_name == 'Ambient light':
+        qeexo_name = 'ambient'
+    elif sensor_name == 'RCDA':
+        qeexo_name = 'rcda'
+    elif sensor_name == 'ETOH':
+        qeexo_name = 'etoh'
+    elif sensor_name == 'TVOC':
+        qeexo_name = 'tvoc'
+    elif sensor_name == 'IAQ':
+        qeexo_name = 'iaq'
+    elif sensor_name == 'ECO2':
+        qeexo_name = 'eco2'
+    elif sensor_name == 'RMOX':
+        qeexo_name = 'rmox'
+    elif sensor_name == 'Low power accelerometer':
+        qeexo_name = 'accel_lowpower'
+    elif sensor_name == 'High sensitivity accelerometer':
+        qeexo_name = 'accel_highsensitive'
+    else:
+        qeexo_name = sensor_name.lower()
+
     return qeexo_name
 
 # Open CSV file and write header

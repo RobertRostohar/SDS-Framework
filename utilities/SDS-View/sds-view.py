@@ -56,22 +56,23 @@ class RecordManager:
 
 # Convert C style data type to Python style
 def getDataType(data_type):
-    match data_type:
-        case "int16_t":
-            return "h"
-        case "uint16_t":
-            return "H"
-        case "int32_t":
-            return "i"
-        case "uint32_t":
-            return "I"
-        case "float":
-            return "f"
-        case "double":
-            return "d"
-        case _:
-            print(f"Unknown data type: {data_type}\n")
-            return None
+    if   data_type == "int16_t":
+        d_type = "h"
+    elif data_type == "uint16_t":
+        d_type = "H"
+    elif data_type == "int32_t":
+        d_type = "i"
+    elif data_type == "uint32_t":
+        d_type = "I"
+    elif data_type == "float":
+        d_type = "f"
+    elif data_type == "double":
+        d_type = "d"
+    else:
+        print(f"Unknown data type: {data_type}\n")
+        d_type = "I"
+
+    return d_type
 
 # Open SDS data file in read mode
 def openFile(file_name):
