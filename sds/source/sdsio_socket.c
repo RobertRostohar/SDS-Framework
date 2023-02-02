@@ -31,7 +31,7 @@
 #define SERVER_IP               {0, 0, 0, 0}
 #endif
 #ifndef SERVER_PORT
-#define SERVER_PORT             5000U
+#define SERVER_PORT             5050U
 #endif
 
 #ifndef SOCKET_RECEIVE_TOUT
