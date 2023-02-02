@@ -109,10 +109,14 @@ class sdsio_manager:
 # Start TCP Server
 def start_server ():
   #Get local IP
-  ip = socket.gethostbyname(socket.gethostname())
+  if sys.platform == "darwin":
+    ip = socket.gethostbyname(socket.gethostname() + '.local')
+  else:
+    ip = socket.gethostbyname(socket.gethostname())
+
   print(f"Start TCP Server.\n")
   print(f"  Server IP: {ip}\n")
-  port = 5000
+  port = 5050
   # Create TCP socket (port 5000)
   sock_listening = socket.socket(socket.AF_INET,     # Internet
                                  socket.SOCK_STREAM) # TCP
@@ -153,6 +157,9 @@ def main():
     except Exception as e: 
       print(f"Socket recv error: {e}\n")
       sys.exit(1)
+    except KeyboardInterrupt:
+      print("\nExit\n")
+      sys.exit(0)
 
     stream_buf_cnt = 0
 
@@ -205,5 +212,10 @@ def main():
 
 # main
 if __name__ == '__main__':
-  main()
+  try:
+    print("Press Ctrl+C to exit.\n")
+    main()
+  except KeyboardInterrupt:
+    print("\nExit\n")
+    sys.exit(0)
 
