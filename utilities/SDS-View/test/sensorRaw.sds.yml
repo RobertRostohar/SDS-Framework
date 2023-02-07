@@ -1,9 +1,0 @@
-sds:
-    name: Raw
-    description: Raw data with 1kHz sample rate
-    frequency: 1000
-    content:
-    - value: raw
-      type: uint32_t
-      offset: 100
-      scale: 0.6
