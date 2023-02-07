@@ -67,9 +67,13 @@ static sdsRecEvent_t sdsRecEvent = NULL;
 // Thread Id
 static osThreadId_t sdsRecThreadId;
 
+// Close event flags
+static osEventFlagsId_t sdsRecCloseEventFlags;
+
 // Event definitions
 #define SDS_REC_EVENT_FLAG_MASK  ((1UL << SDS_REC_MAX_STREAMS) - 1)
 
+#define FLAG_MASK_CLOSE (1UL << 31)
 
 // Helper functions
 
@@ -128,17 +132,8 @@ static sdsRec_t * sdsRecAlloc (uint32_t *index) {
   return rec;
 }
 
-static void sdsRecFree (sdsRec_t *rec) {
-  uint32_t n;
-
-  if (rec != NULL) {
-    for (n = 0U; n < SDS_REC_MAX_STREAMS; n++) {
-      if (pRecStreams[n] == rec) {
-        pRecStreams[n] = NULL;
-        break;
-      }
-    }
-  }
+static void sdsRecFree (uint32_t index) {
+  pRecStreams[index] = NULL;
 }
 
 // Event callback
@@ -153,7 +148,7 @@ static void sdsRecEventCallback (sdsId_t id, uint32_t event, void *arg) {
 // Recorder thread
 static __NO_RETURN void sdsRecThread (void *arg) {
   sdsRec_t *rec;
-  uint32_t flags, cnt, n;
+  uint32_t mask, flags, fm, cnt, n;
   RecHead_t rec_head;
 
   (void)arg;
@@ -162,26 +157,37 @@ static __NO_RETURN void sdsRecThread (void *arg) {
     flags = osThreadFlagsWait(SDS_REC_EVENT_FLAG_MASK, osFlagsWaitAny, osWaitForever);
     if ((flags & osFlagsError) == 0U) {
       for (n = 0U; n < SDS_REC_MAX_STREAMS; n++) {
-        if (flags & (1U << n)) {
-          rec = pRecStreams[n];
-          if (rec != NULL) { 
-            while (rec->cnt_out != rec->cnt_in) {
-              cnt = sdsRead(rec->stream, &rec_head, sizeof(RecHead_t));
-              if (cnt == sizeof(RecHead_t)) {
-                memcpy(RecBuf, &rec_head, sizeof(RecHead_t));
-                cnt = sdsRead(rec->stream, RecBuf + sizeof(RecHead_t), rec_head.data_size);
-                rec->cnt_out++;
-                if (cnt == rec_head.data_size) {
-                  cnt += sizeof(RecHead_t);
-                  if (sdsioWrite(rec->sdsio, RecBuf, cnt) != cnt) {
-                    if (sdsRecEvent != NULL) {
-                      sdsRecEvent(rec, SDS_REC_EVENT_IO_ERROR);
-                    }
-                  }
+        mask = (1U << n);
+        if ((flags & mask) == 0U) {
+          continue;
+        }
+        rec = pRecStreams[n];
+        if (rec == NULL) {
+          continue;
+        }
+        fm = rec->flag_mask;
+        if (fm == FLAG_MASK_CLOSE) {
+          continue;
+        }
+        while (rec->cnt_out != rec->cnt_in) {
+          cnt = sdsRead(rec->stream, &rec_head, sizeof(RecHead_t));
+          if (cnt == sizeof(RecHead_t)) {
+            memcpy(RecBuf, &rec_head, sizeof(RecHead_t));
+            cnt = sdsRead(rec->stream, RecBuf + sizeof(RecHead_t), rec_head.data_size);
+            rec->cnt_out++;
+            if (cnt == rec_head.data_size) {
+              cnt += sizeof(RecHead_t);
+              if (sdsioWrite(rec->sdsio, RecBuf, cnt) != cnt) {
+                if (sdsRecEvent != NULL) {
+                  sdsRecEvent(rec, SDS_REC_EVENT_IO_ERROR);
                 }
               }
             }
           }
+        }
+        if ((fm & FLAG_MASK_CLOSE) != 0U) {
+          rec->flag_mask = FLAG_MASK_CLOSE;
+          osEventFlagsSet(sdsRecCloseEventFlags, mask);
         }
       }
     }
@@ -199,8 +205,11 @@ int32_t sdsRecInit (sdsRecEvent_t event_cb) {
   if (sdsioInit() == SDSIO_OK) {
     sdsRecThreadId = osThreadNew(sdsRecThread, NULL, NULL);
     if (sdsRecThreadId != NULL)  {
-      sdsRecEvent = event_cb;
-      ret = SDS_OK;
+      sdsRecCloseEventFlags = osEventFlagsNew(NULL);
+      if (sdsRecCloseEventFlags != NULL) {
+        sdsRecEvent = event_cb;
+        ret = SDS_OK;
+      }
     }
   }
   return ret;
@@ -211,6 +220,7 @@ int32_t sdsRecUninit (void) {
   int32_t ret = SDS_ERROR;
 
   osThreadTerminate(sdsRecThreadId);
+  osEventFlagsDelete(sdsRecCloseEventFlags);
   sdsRecEvent = NULL;
   sdsioUninit();
 
@@ -228,9 +238,9 @@ sdsRecId_t sdsRecOpen (const char *name, void *buf, uint32_t buf_size, uint32_t 
     rec = sdsRecAlloc(&index);
     if (rec != NULL) {
       rec->buf_size  = buf_size;
-      rec->flag_mask = 0U;
       rec->cnt_in    = 0U;
       rec->cnt_out   = 0U;
+      rec->flag_mask = 0U;
       rec->stream    = sdsOpen(buf, buf_size, 0U, io_threshold);
       rec->sdsio     = sdsioOpen(name, sdsioModeWrite);
 
@@ -250,7 +260,7 @@ sdsRecId_t sdsRecOpen (const char *name, void *buf, uint32_t buf_size, uint32_t 
           sdsioClose(rec->sdsio);
           rec->sdsio = NULL;
         }
-        sdsRecFree(rec);
+        sdsRecFree(index);
         rec = NULL;
       }
     }
@@ -261,23 +271,29 @@ sdsRecId_t sdsRecOpen (const char *name, void *buf, uint32_t buf_size, uint32_t 
 // Close recorder stream
 int32_t sdsRecClose (sdsRecId_t id) {
   sdsRec_t *rec = id;
-  uint32_t  n;
+  uint32_t  n, mask;
   int32_t   ret = SDS_ERROR;
 
+  mask = 0U;
   if (rec != NULL) {
     for (n = 0U; n < SDS_REC_MAX_STREAMS; n++) {
       if (pRecStreams[n] == rec) {
+        mask = (1U << n);
         break;
       }
     }
-    osThreadFlagsSet(sdsRecThreadId, (1U << n));
-    osDelay(100);
 
-    sdsClose(rec->stream);
-    sdsioClose(rec->sdsio);
-    sdsRecFree(rec);
+    if (mask != 0U) {
+      rec->flag_mask = FLAG_MASK_CLOSE | mask;
+      osThreadFlagsSet(sdsRecThreadId, mask);
+      osEventFlagsWait(sdsRecCloseEventFlags, mask, osFlagsWaitAll, osWaitForever);
 
-    ret = SDS_OK;
+      sdsClose(rec->stream);
+      sdsioClose(rec->sdsio);
+      sdsRecFree(n);
+
+      ret = SDS_OK;
+    }
   }
   return ret;
 }
