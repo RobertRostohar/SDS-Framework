@@ -116,6 +116,9 @@ static uint8_t sensorBuf[SENSOR_BUF_SIZE];
 // Sensor close flag
 static uint8_t close_flag = 0U;
 
+// Event close sent flag
+static uint8_t event_close_sent;
+
 // Thread identifiers
 static osThreadId_t thrId_demo           = NULL;
 static osThreadId_t thrId_read_sensors   = NULL;
@@ -135,13 +138,11 @@ static osThreadId_t thrId_read_sensors   = NULL;
 static __NO_RETURN void read_sensors (void *argument) {
   uint32_t num, buf_size;
   uint32_t timestamp;
-  uint8_t  event_close_sent = 0U;
   (void)   argument;
 
   timestamp = osKernelGetTickCount();
   for (;;) {
     if (close_flag == 0U) {
-      event_close_sent = 0U;
       if (sensorGetStatus(sensorId_accelerometer).active != 0U) {
         num = sizeof(sensorBuf) / sensorConfig_accelerometer->sample_size;
         num = sensorReadSamples(sensorId_accelerometer, num, sensorBuf, sizeof(sensorBuf));
@@ -197,8 +198,8 @@ static __NO_RETURN void read_sensors (void *argument) {
       }
     } else {
       if (event_close_sent == 0U) {
-        osThreadFlagsSet(thrId_demo, EVENT_CLOSE);
         event_close_sent = 1U;
+        osThreadFlagsSet(thrId_demo, EVENT_CLOSE);
       }
     }
 
@@ -304,8 +305,9 @@ static void button_event (void) {
     sensorEnable(sensorId_temperatureSensor);
     printf("Temperature sensor enabled\r\n");
   } else {
+    event_close_sent = 0U;
     close_flag = 1U;
-    flags = osThreadFlagsWait(EVENT_CLOSE, osFlagsWaitAny, 1000U);
+    flags = osThreadFlagsWait(EVENT_CLOSE, osFlagsWaitAny, osWaitForever);
     if ((flags & osFlagsError) == 0U) {
       active = 0U;
 
