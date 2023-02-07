@@ -52,12 +52,23 @@ Print help with:
 ```
 python sds-view.py --help
 ```
+
 ### Run tool
 To plot SDS data on run:
 ```
 python sds-view.py -y <description_filename>.yml -s <sds_data_filename>.sds [<sds_data_filename2>.sds ...]
 ```
-#### Example
-```
-python sds-view.py -y test/sensorGyro.sds.yml -s test/sensorGyro.sds
-```
+
+### Examples
+- Gyroscope:
+   ```
+   python sds-view.py -y test/Gyroscope.sds.yml -s test/Gyroscope.0.sds
+   ```
+- Accelerometer:
+   ```
+   python sds-view.py -y test/Accelerometer.sds.yml -s test/Accelerometer.0.sds
+   ```
+- Temperature:
+   ```
+   python sds-view.py -y test/Temperature.sds.yml -s test/Temperature.0.sds
+   ```
