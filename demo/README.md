@@ -21,7 +21,7 @@ Demo is available for the following targets:
  - WiFi Access Point (board and PC connected to the same local network)
 
 ### Software:
- - [CMSIS-Toolbox 1.2.0](https://github.com/Open-CMSIS-Pack/cmsis-toolbox/releases/tag/1.2.0) or later
+ - [CMSIS-Toolbox 1.4.0](https://github.com/Open-CMSIS-Pack/cmsis-toolbox/releases/tag/1.4.0) or later
  - Arm Compiler 6.18 or later
  - [python 3.9 or later](https://www.python.org/downloads/windows/)
 
