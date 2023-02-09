@@ -94,7 +94,11 @@ void ARM_VSI0_Handler (void) {
 
   event = ARM_VSI0->IRQ.Status;
   ARM_VSI0->IRQ.Clear = event;
-  ARM_VSI0->Timer.Interval = SENSOR0_SAMPLE_INTERVAL;
+  #if (SENSOR0_DMA_MODE == 0U)
+    ARM_VSI0->Timer.Interval = SENSOR0_SAMPLE_INTERVAL;
+  #else
+    ARM_VSI0->Timer.Interval = SENSOR0_BLOCK_INTERVAL;
+  #endif
   __DSB();
   __ISB();
 
@@ -309,7 +313,11 @@ void ARM_VSI1_Handler (void) {
 
   event = ARM_VSI1->IRQ.Status;
   ARM_VSI1->IRQ.Clear = event;
-  ARM_VSI1->Timer.Interval = SENSOR1_SAMPLE_INTERVAL;
+  #if (SENSOR1_DMA_MODE == 0U)
+    ARM_VSI1->Timer.Interval = SENSOR1_SAMPLE_INTERVAL;
+  #else
+    ARM_VSI1->Timer.Interval = SENSOR1_BLOCK_INTERVAL;
+  #endif
   __DSB();
   __ISB();
 
@@ -524,7 +532,11 @@ void ARM_VSI2_Handler (void) {
 
   event = ARM_VSI2->IRQ.Status;
   ARM_VSI2->IRQ.Clear = event;
-  ARM_VSI2->Timer.Interval = SENSOR2_SAMPLE_INTERVAL;
+  #if (SENSOR2_DMA_MODE == 0U)
+    ARM_VSI2->Timer.Interval = SENSOR2_SAMPLE_INTERVAL;
+  #else
+    ARM_VSI2->Timer.Interval = SENSOR2_BLOCK_INTERVAL;
+  #endif
   __DSB();
   __ISB();
 
@@ -739,7 +751,11 @@ void ARM_VSI3_Handler (void) {
 
   event = ARM_VSI3->IRQ.Status;
   ARM_VSI3->IRQ.Clear = event;
-  ARM_VSI3->Timer.Interval = SENSOR3_SAMPLE_INTERVAL;
+  #if (SENSOR3_DMA_MODE == 0U)
+    ARM_VSI3->Timer.Interval = SENSOR3_SAMPLE_INTERVAL;
+  #else
+    ARM_VSI3->Timer.Interval = SENSOR3_BLOCK_INTERVAL;
+  #endif
   __DSB();
   __ISB();
 
@@ -954,7 +970,11 @@ void ARM_VSI4_Handler (void) {
 
   event = ARM_VSI4->IRQ.Status;
   ARM_VSI4->IRQ.Clear = event;
-  ARM_VSI4->Timer.Interval = SENSOR4_SAMPLE_INTERVAL;
+  #if (SENSOR4_DMA_MODE == 0U)
+    ARM_VSI4->Timer.Interval = SENSOR4_SAMPLE_INTERVAL;
+  #else
+    ARM_VSI4->Timer.Interval = SENSOR4_BLOCK_INTERVAL;
+  #endif
   __DSB();
   __ISB();
 
@@ -1169,7 +1189,11 @@ void ARM_VSI5_Handler (void) {
 
   event = ARM_VSI5->IRQ.Status;
   ARM_VSI5->IRQ.Clear = event;
-  ARM_VSI5->Timer.Interval = SENSOR5_SAMPLE_INTERVAL;
+  #if (SENSOR5_DMA_MODE == 0U)
+    ARM_VSI5->Timer.Interval = SENSOR5_SAMPLE_INTERVAL;
+  #else
+    ARM_VSI5->Timer.Interval = SENSOR5_BLOCK_INTERVAL;
+  #endif
   __DSB();
   __ISB();
 
@@ -1384,7 +1408,11 @@ void ARM_VSI6_Handler (void) {
 
   event = ARM_VSI6->IRQ.Status;
   ARM_VSI6->IRQ.Clear = event;
-  ARM_VSI6->Timer.Interval = SENSOR6_SAMPLE_INTERVAL;
+  #if (SENSOR6_DMA_MODE == 0U)
+    ARM_VSI6->Timer.Interval = SENSOR6_SAMPLE_INTERVAL;
+  #else
+    ARM_VSI6->Timer.Interval = SENSOR6_BLOCK_INTERVAL;
+  #endif
   __DSB();
   __ISB();
 
@@ -1599,7 +1627,11 @@ void ARM_VSI7_Handler (void) {
 
   event = ARM_VSI7->IRQ.Status;
   ARM_VSI7->IRQ.Clear = event;
-  ARM_VSI7->Timer.Interval = SENSOR7_SAMPLE_INTERVAL;
+  #if (SENSOR7_DMA_MODE == 0U)
+    ARM_VSI7->Timer.Interval = SENSOR7_SAMPLE_INTERVAL;
+  #else
+    ARM_VSI7->Timer.Interval = SENSOR7_BLOCK_INTERVAL;
+  #endif
   __DSB();
   __ISB();
 
