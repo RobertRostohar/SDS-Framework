@@ -52,7 +52,22 @@ Print help with:
 ```
 python sds-view.py --help
 ```
+```
+usage: sds-view.py [-h] -y <yaml_file> -s <sds_file> [<sds_file> ...] [--3D]
 
+View SDS data
+
+options:
+  -h, --help            show this help message and exit
+
+required:
+  -y <yaml_file>        YAML sensor description file
+  -s <sds_file> [<sds_file> ...]
+                        SDS data recording file
+
+optional:
+  --3D                  Plot 3D view in addition to normal 2D
+```
 ### Run tool
 To plot SDS data on run:
 ```
