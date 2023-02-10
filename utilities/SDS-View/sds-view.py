@@ -95,7 +95,7 @@ def closeFile(file_name):
         sys.exit(1)
 
 # Create new figure and plot content
-def plotData(all_data, data_desc, freq, title):
+def plotData(all_data, data_desc, freq, title, view3D):
     dim = {}
     desc_n = 0
     desc_n_max = len(data_desc)
@@ -143,7 +143,7 @@ def plotData(all_data, data_desc, freq, title):
         plt.plot(t, scaled_data, label=desc["value"])
 
         # Store data points in a dictionary for later use when there are 3 axes described
-        if desc_n_max == 3:
+        if view3D and (desc_n_max == 3):
             dim[desc_n] = scaled_data
 
         # Increment description number
@@ -155,7 +155,7 @@ def plotData(all_data, data_desc, freq, title):
     plt.legend()
 
     # Create a 3D view when there are 3 axes available
-    if desc_n_max == 3:
+    if view3D and (desc_n_max == 3):
         fig3d = plt.figure()
         ax3d = fig3d.add_subplot(projection="3d")
         ax3d.plot(dim[0], dim[1], dim[2])
@@ -167,13 +167,21 @@ def plotData(all_data, data_desc, freq, title):
 # Main function
 def main():
     parser = argparse.ArgumentParser(description="View SDS data")
+
     required = parser.add_argument_group("required")
-    required.add_argument("-y", "--yml", help="YAML sensor description file", required=True)
-    required.add_argument("-s", "--sds", help="SDS data recording file", nargs="+", required=True)
+    required.add_argument("-y", dest="yaml", metavar="<yaml_file>",
+                            help="YAML sensor description file", required=True)
+    required.add_argument("-s", dest="sds", metavar="<sds_file>",
+                            help="SDS data recording file", nargs="+", required=True)
+
+    optional = parser.add_argument_group("optional")
+    optional.add_argument("--3D", dest="view3D",
+                            help="Plot 3D view in addition to normal 2D", action="store_true")
+
     args = parser.parse_args()
 
     # Load data from .yml file
-    meta_file = openFile(args.yml)
+    meta_file = openFile(args.yaml)
     meta_data = yaml.load(meta_file, Loader=yaml.FullLoader)["sds"]
     closeFile(meta_file)
 
@@ -196,13 +204,12 @@ def main():
         Record.flush()
 
         # Plot data from .sds file/files
-        plotData(data, data_desc, data_freq, data_name)
+        plotData(data, data_desc, data_freq, data_name, args.view3D)
 
     # Show plotted figures
     plt.grid(linestyle=":")
     plt.show()
 
 
-# --- Main ---
 if __name__ == "__main__":
     main()
