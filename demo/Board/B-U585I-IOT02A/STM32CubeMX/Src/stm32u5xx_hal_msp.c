@@ -105,7 +105,16 @@ void HAL_MDF_MspInit(MDF_HandleTypeDef* hmdf)
   /** Initializes the peripherals clock
   */
     PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_ADF1;
-    PeriphClkInit.Adf1ClockSelection = RCC_ADF1CLKSOURCE_HCLK;
+    PeriphClkInit.Adf1ClockSelection = RCC_ADF1CLKSOURCE_PLL3;
+    PeriphClkInit.PLL3.PLL3Source = RCC_PLLSOURCE_MSI;
+    PeriphClkInit.PLL3.PLL3M = 1;
+    PeriphClkInit.PLL3.PLL3N = 80;
+    PeriphClkInit.PLL3.PLL3P = 2;
+    PeriphClkInit.PLL3.PLL3Q = 28;
+    PeriphClkInit.PLL3.PLL3R = 2;
+    PeriphClkInit.PLL3.PLL3RGE = RCC_PLLVCIRANGE_0;
+    PeriphClkInit.PLL3.PLL3FRACN = 0;
+    PeriphClkInit.PLL3.PLL3ClockOut = RCC_PLL3_DIVP;
     if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
     {
       Error_Handler();

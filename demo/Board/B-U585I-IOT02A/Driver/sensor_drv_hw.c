@@ -20,11 +20,13 @@
 
 #include "sensor_drv.h"
 #include "sensor_drv_hw.h"
+#include "sensor_config.h"
 
 #include "b_u585i_iot02a_env_sensors.h"
 #include "b_u585i_iot02a_motion_sensors.h"
 
 #include "ism330dhcx_fifo.h"
+#include "audio_drv.h"
 
 extern ISM330DHCX_Object_t ISM330DHCX_Obj;
 
@@ -32,6 +34,20 @@ extern ISM330DHCX_Object_t ISM330DHCX_Obj;
 #include "cmsis_os2.h"
 
 static uint8_t ISM330DHCX_ActiveFlags = 0U;
+
+// Microphone 
+#define MICROPHONE_SAMPLE_SIZE  SENSOR6_SAMPLE_SIZE
+#define MICROPHONE_BLOCK_SIZE   SENSOR6_BLOCK_SIZE
+#define MICROPHONE_BLOCK_NUM    SENSOR6_BLOCK_NUM
+#define MICROPHONE_BUF_SIZE     MICROPHONE_SAMPLE_SIZE * MICROPHONE_BLOCK_SIZE * MICROPHONE_BLOCK_NUM
+
+         static sensorId_t      Microphone_Id;
+         static sensorEvent_t   Microphone_callback    = NULL;
+         static uint32_t        Microphone_event_mask  = 0U;
+         static uint32_t        Microphone_BlockIdxOut = 0U;
+volatile static uint32_t        Microphone_BlockCntIn  = 0U;
+volatile static uint32_t        Microphone_BlockCntOut = 0U;
+         static uint8_t         Microphone_Buf[MICROPHONE_BUF_SIZE];
 
 // Mutex lock
 static osMutexId_t lock_id  = NULL;
@@ -444,4 +460,91 @@ sensorDrvHW_t sensorDrvHW_5 = {
   Magnetometer_GetOverflow,
   Magnetometer_ReadSamples,
   NULL
+};
+
+// Audio microphone
+void AudioDrv_Callback (uint32_t event) {
+  uint32_t ev = 0U;
+
+  if ((event & AUDIO_DRV_EVENT_RX_DATA) != 0U) {
+    Microphone_BlockCntIn++;
+    if ((Microphone_BlockCntIn - Microphone_BlockCntOut) >= (MICROPHONE_BLOCK_NUM)) {
+      if ((Microphone_event_mask & SENSOR_EVENT_OVERFLOW) != 0U) {
+        event |= SENSOR_EVENT_OVERFLOW;
+      }
+    }
+    if ((Microphone_event_mask & SENSOR_EVENT_DATA) != 0U) {
+      event |= SENSOR_EVENT_DATA;
+    }
+    if ((ev != 0U) && (Microphone_callback != NULL)) {
+      Microphone_callback(Microphone_Id, ev);
+    }
+  }
+}
+
+static int32_t Microphone_RegisterEvents (sensorId_t id, sensorEvent_t event_cb, uint32_t event_mask) {
+  Microphone_Id         = id;
+  Microphone_callback   = event_cb;
+  Microphone_event_mask = event_mask;
+
+  return SENSOR_OK;
+}
+
+static int32_t Microphone_Enable (void) {
+  int32_t ret;
+
+  ret = AudioDrv_SetBuf(AUDIO_DRV_INTERFACE_RX,
+                        Microphone_Buf, 
+                        MICROPHONE_BLOCK_NUM,
+                        MICROPHONE_BLOCK_SIZE / MICROPHONE_SAMPLE_SIZE);
+  
+  if (ret == AUDIO_DRV_OK) {
+    ret = AudioDrv_Control(AUDIO_DRV_CONTROL_RX_ENABLE);
+  }
+
+  if (ret == AUDIO_DRV_OK) {
+    ret = SENSOR_OK;
+  } else {
+    ret = SENSOR_ERROR;
+  }
+
+  return ret;
+}
+
+static int32_t Microphone_Disable (void) {
+  int32_t ret = SENSOR_ERROR;
+
+  if (AudioDrv_Control(AUDIO_DRV_CONTROL_RX_DISABLE) == AUDIO_DRV_OK) {
+    ret = SENSOR_OK;
+  }
+
+  return ret;
+}
+
+static uint32_t Microphone_GetOverflow (void) {
+  return 0U;
+}
+
+static void *Microphone_GetBlockData (void) {
+  void *block = NULL;
+
+  if ((Microphone_BlockCntIn - Microphone_BlockCntOut) > 0) {
+    block = Microphone_Buf + (Microphone_BlockIdxOut * MICROPHONE_BLOCK_SIZE);
+
+    Microphone_BlockIdxOut++;
+    if(Microphone_BlockIdxOut == MICROPHONE_BLOCK_NUM) {
+      Microphone_BlockIdxOut = 0;
+    }
+    Microphone_BlockCntOut++;
+  }
+  return block;
+}
+
+sensorDrvHW_t sensorDrvHW_6 = {
+  Microphone_RegisterEvents,
+  Microphone_Enable,
+  Microphone_Disable,
+  Microphone_GetOverflow,
+  NULL,
+  Microphone_GetBlockData
 };
