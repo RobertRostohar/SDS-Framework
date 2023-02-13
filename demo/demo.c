@@ -289,8 +289,8 @@ static void button_event (void) {
                                   recBuf_gyroscope,
                                   sizeof(recBuf_gyroscope),
                                   REC_IO_THRESHOLD_GYROSCOPE);
-    sensorEnable(sensorId_gyroscope);
 #endif
+    sensorEnable(sensorId_gyroscope);
     printf("Gyroscope enabled\r\n");
 
     // Temperature sensor enable
