@@ -180,6 +180,9 @@ def prepareData(meta_data, raw_data, data_manipulation):
 # Write data to CSV file using Qeexo V2 format
 def writeQeexoV2CSV(args, data, meta_data):
     interval = args.interval
+    normalize = args.normalize
+    csv_start_tick = args.start_tick
+    csv_stop_tick = args.stop_tick
 
     csv_header = ['timestamp']
     for sensor in meta_data:
@@ -199,7 +202,8 @@ def writeQeexoV2CSV(args, data, meta_data):
         timestamp_base.append(data[sensor]["timestamp"][0])
 
     # Select timestamp with lowest value and round to first next interval
-    csv_timestamp = ((min(timestamp_base)//interval) * interval) + interval
+    csv_timestamp_base = (min(timestamp_base)//interval) * interval
+    csv_timestamp = csv_timestamp_base + interval
 
     while True:
         # Create a list of lists, based on the number of sensors
@@ -253,7 +257,16 @@ def writeQeexoV2CSV(args, data, meta_data):
         # Write current row into CSV file and increment CSV timestamp by one interval.
         # If there is no data present in this row, exit while loop without writing to the file.
         if csv_row != [[] for i in range(0, len(data.keys()))]:
-            writer.writerow([csv_timestamp] + csv_row + [args.label])
+            if normalize == True:
+                tmp_csv_timestamp = csv_timestamp - csv_timestamp_base
+            else:
+                tmp_csv_timestamp = csv_timestamp
+
+            if (csv_start_tick == None) or (tmp_csv_timestamp >= csv_start_tick):
+                if (csv_stop_tick == None) or (csv_stop_tick > tmp_csv_timestamp):
+                    writer.writerow([tmp_csv_timestamp] + csv_row + [args.label])
+                else:
+                    break
             csv_timestamp += interval
         else:
             break
@@ -275,6 +288,12 @@ def main():
                             help="Output data format", required=True)
 
     optional = parser.add_argument_group("optional")
+    optional.add_argument("--normalize", dest="normalize",
+                            help="Normalize timestamps so they start with 0", action="store_true")
+    optional.add_argument("--start-tick", dest="start_tick", metavar="<start-tick>",
+                            help="Exported data start tick (default: %(default)s)", type=int, default=None)
+    optional.add_argument("--stop-tick", dest="stop_tick", metavar="<stop-tick>",
+                            help="Exported data stop tick (default: %(default)s)", type=int, default=None)
     optional.add_argument("--label", dest="label", metavar="'label'",
                             help="Qeexo class label for sensor data (default: %(default)s)", default=None)
     optional.add_argument("--interval", dest="interval", metavar="<interval>",
