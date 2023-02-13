@@ -141,6 +141,42 @@ def createCSV(filename):
     except Exception as e:
         sys.exit(f"Error: {e}")
 
+def prepareData(meta_data, raw_data, data_manipulation):
+    sensor_data = []
+    desc_n_max = len(meta_data)
+    desc_n = 0
+    for channel in meta_data:
+        tmp_data = []
+        # Extract channel data type information from YAML file
+        d_type = getDataType(channel["type"])
+        # Calculate number of bytes needed for decoding the data in .sds file
+        d_byte = calcsize(d_type)
+        # Disunite raw data into a list of data points according to the number
+        # of bytes needed for each data point
+        tmp_data = [raw_data[i:(i + d_byte)] for i in range(0, len(raw_data), d_byte)]
+        # Keep only every n-th data point
+        tmp_data = tmp_data[desc_n::desc_n_max]
+        # Decode retrieved data points
+        tmp_data = list(unpack(f"{int(len(tmp_data))}{d_type}", b''.join(tmp_data)))
+        # Scale and offset data points if output format is not Qeexo V2 CSV
+        if data_manipulation == True:
+            if "scale" in channel:
+                scale = channel["scale"]
+            else:
+                scale = 1
+            if "offset" in channel:
+                offset = channel["offset"]
+            else:
+                offset = 0
+            data = [((x * scale) + offset) for x in tmp_data]
+        else:
+            data = tmp_data
+        # Store decoded data in a dictionary
+        sensor_data.append(data)
+        # Increment channel description number
+        desc_n += 1
+
+    return sensor_data
 # Write data to CSV file using Qeexo V2 format
 def writeQeexoV2CSV(args, data, meta_data):
     interval = args.interval
@@ -196,36 +232,8 @@ def writeQeexoV2CSV(args, data, meta_data):
             raw_data = data[sensor]["raw_data"][:n_bytes]
             data[sensor]["raw_data"] = data[sensor]["raw_data"][n_bytes:]
 
-            sensor_data = {}
-            desc_n = 0
-            desc_n_max = len(meta_data[sensor])
-            for channel in meta_data[sensor]:
-                tmp_data = []
-                # Extract channel data type information from YAML file
-                d_type = getDataType(channel["type"])
-                # Calculate number of bytes needed for decoding the data in .sds file
-                d_byte = calcsize(d_type)
-                # Disunite raw data into a list of data points according to the number
-                # of bytes needed for each data point
-                tmp_data = [raw_data[i:(i + d_byte)] for i in range(0, len(raw_data), d_byte)]
-                # Keep only every n-th data point
-                tmp_data = tmp_data[desc_n::desc_n_max]
-                # Decode retrieved data points
-                tmp_data = list(unpack(f"{int(len(tmp_data))}{d_type}", b''.join(tmp_data)))
-                # Scale and offset data points
-                if "scale" in channel:
-                    scale = channel["scale"]
-                else:
-                    scale = 1
-                if "offset" in channel:
-                    offset = channel["offset"]
-                else:
-                    offset = 0
-                scaled_data = [((x * scale) + offset) for x in tmp_data]
-                # Store decoded data in a dictionary
-                sensor_data[desc_n] = scaled_data
-                # Increment channel description number
-                desc_n += 1
+            # Convert raw data according to description in meta data
+            sensor_data = prepareData(meta_data[sensor], raw_data, data_manipulation=False)
 
             # Group every n-th element of each channel into a list
             csv_data = []
