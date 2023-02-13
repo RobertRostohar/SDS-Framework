@@ -31,6 +31,7 @@
 #endif
 
 #include "WiFi_EMW3080.h"
+#include "audio_drv.h"
 
 #include "b_u585i_iot02a_env_sensors.h"
 #include "b_u585i_iot02a_motion_sensors.h"
@@ -84,9 +85,9 @@ PCD_HandleTypeDef hpcd_USB_OTG_FS;
 void SystemClock_Config(void);
 static void SystemPower_Config(void);
 static void MX_GPIO_Init(void);
-static void MX_ADF1_Init(void);
-static void MX_ICACHE_Init(void);
 static void MX_GPDMA1_Init(void);
+static void MX_ICACHE_Init(void);
+static void MX_ADF1_Init(void);
 static void MX_I2C1_Init(void);
 static void MX_I2C2_Init(void);
 static void MX_OCTOSPI1_Init(void);
@@ -160,9 +161,17 @@ void HAL_GPIO_EXTI_Rising_Callback(uint16_t GPIO_Pin) {
 }
 
 /**
+  * AudioDrv_Callback
+  */
+extern void AudioDrv_Callback (uint32_t event);
+__weak void AudioDrv_Callback (uint32_t event) {
+  (void)event;
+}
+
+/**
   * BSP Sensor Init
   */
-void BSP_SENSOR_Init (void) {
+static void BSP_SENSOR_Init (void) {
   ISM330DHCX_IO_t IOCtx;
 
   BSP_ENV_SENSOR_Init(0U, ENV_TEMPERATURE);
@@ -198,6 +207,9 @@ void BSP_SENSOR_Init (void) {
   ISM330DHCX_FIFO_GYRO_Set_BDR(&ISM330DHCX_Obj, 1666.0f);
 
   ISM330DHCX_FIFO_Set_Mode(&ISM330DHCX_Obj, ISM330DHCX_STREAM_MODE);
+
+  AudioDrv_Initialize(AudioDrv_Callback);
+  AudioDrv_Configure(AUDIO_DRV_INTERFACE_RX,1, 16, 16000);
 }
 
 /* USER CODE END 0 */
@@ -233,9 +245,8 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_ADF1_Init();
-  MX_ICACHE_Init();
   MX_GPDMA1_Init();
+  MX_ICACHE_Init();
   MX_I2C1_Init();
   MX_I2C2_Init();
   MX_OCTOSPI1_Init();

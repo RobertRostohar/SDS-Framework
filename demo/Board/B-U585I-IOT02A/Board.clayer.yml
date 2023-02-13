@@ -35,6 +35,7 @@ layer:
     - .
     - ./Driver
     - ../../../sensor/include
+    - ../../../audio/include
 
   defines:
     - MX_WIFI_SPI_DMA=0   # Do not use DMA if TZEN=1
@@ -81,6 +82,7 @@ layer:
     - component: Keil::Board Support&B-U585I-IOT02A:Drivers:Basic I/O
     - component: Keil::Board Support&B-U585I-IOT02A:Drivers:Environmental Sensors
     - component: Keil::Board Support&B-U585I-IOT02A:Drivers:Motion Sensors
+    - component: Keil::Board Support&B-U585I-IOT02A:Drivers:Audio
 
     - component: ARM::CMSIS:CORE
 
@@ -101,4 +103,5 @@ layer:
         - file: ./retarget_stdio.c
         - file: ./Driver/sensor_drv_hw.c
         - file: ./Driver/ism330dhcx_fifo.c
+        - file: ./Driver/Audio_B-U585I-IOT02A.c
         - file: ../../../sensor/source/sensor_drv.c
