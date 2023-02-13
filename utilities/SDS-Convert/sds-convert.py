@@ -88,8 +88,7 @@ def getDataType(data_type):
     return d_type
 
 # Select correct Qeexo sensor data name
-def qeexoColumnName(sensor):
-    sensor_name = sensor.strip('./\\').split('.')[0]
+def qeexoColumnName(sensor_name):
     if   sensor_name == 'Accelerometer':
         qeexo_name = 'accel'
     elif sensor_name == 'Gyroscope':
@@ -131,26 +130,29 @@ def qeexoColumnName(sensor):
 
     return qeexo_name
 
-# Open CSV file and write header
-def createCSV(filename, columns):
+
+# Open CSV file and create writer
+def createCSV(filename):
     global csv_file, writer
 
     try:
-        csv_file = open(filename, "w", newline='')
+        csv_file = open(f"{filename}.csv", "w", newline='')
         writer = csv.writer(csv_file)
     except Exception as e:
         sys.exit(f"Error: {e}")
 
+# Write data to CSV file using Qeexo V2 format
+def writeQeexoV2CSV(args, data, meta_data):
+    interval = args.interval
+
     csv_header = ['timestamp']
-    for sensor in columns:
+    for sensor in meta_data:
         sensor_name = qeexoColumnName(sensor)
         csv_header.append(sensor_name)
     csv_header.append('label')
 
     writer.writerow(csv_header)
 
-# Write data to CSV file
-def writeCSV(interval, data, meta_data, data_label):
     # Set sensor position counters to 0 and extract base timestamps for each sensor
     cnt = {}
     cnt_old = {}
@@ -166,6 +168,7 @@ def writeCSV(interval, data, meta_data, data_label):
     while True:
         # Create a list of lists, based on the number of sensors
         csv_row = [[] for i in range(0, len(data.keys()))]
+        sensor_idx = 0
 
         for sensor in data:
             timestamp = data[sensor]["timestamp"]
@@ -189,7 +192,7 @@ def writeCSV(interval, data, meta_data, data_label):
             # Calculate number of data bytes for current timestamp
             n_bytes = sum(data_size[cnt_old[sensor]:cnt[sensor]])
 
-            # Flush used bytes from buffer
+            # Extract needed data and flush used bytes from buffer
             raw_data = data[sensor]["raw_data"][:n_bytes]
             data[sensor]["raw_data"] = data[sensor]["raw_data"][n_bytes:]
 
@@ -229,19 +232,20 @@ def writeCSV(interval, data, meta_data, data_label):
             if len(sensor_data) > 1:
                 for i in range(0, len(sensor_data[0])):
                     tmp_data = []
-                    for channel in sensor_data:
+                    for channel in range(0, len(sensor_data)):
                         tmp_data.append(sensor_data[channel][i])
                     csv_data.append(tmp_data)
             elif len(sensor_data) == 1:
                 csv_data = sensor_data[0]
 
             # Insert sensor data for this CSV timestamp
-            csv_row[sensor] = csv_data
+            csv_row[sensor_idx] = csv_data
+            sensor_idx += 1
 
         # Write current row into CSV file and increment CSV timestamp by one interval.
         # If there is no data present in this row, exit while loop without writing to the file.
         if csv_row != [[] for i in range(0, len(data.keys()))]:
-            writer.writerow([csv_timestamp] + csv_row + [data_label])
+            writer.writerow([csv_timestamp] + csv_row + [args.label])
             csv_timestamp += interval
         else:
             break
@@ -253,14 +257,20 @@ def main():
     parser = argparse.ArgumentParser(description="Convert SDS data to selected format")
 
     required = parser.add_argument_group("required")
-    required.add_argument("-y", "--yaml", help="YAML sensor description file", nargs="+", required=True)
-    required.add_argument("-s", "--sds", help="SDS data recording file", nargs="+", required=True)
-    required.add_argument("-o", "--out", help="Output file", required=True)
-    required.add_argument("-f", "--format", help="Output data format", choices=["qeexo_v2_csv"], required=True)
+    required.add_argument("-y", dest="yaml", metavar="<yaml_file>",
+                            help="YAML sensor description file", nargs="+", required=True)
+    required.add_argument("-s", dest="sds", metavar="<sds_file>",
+                            help="SDS data recording file", nargs="+", required=True)
+    required.add_argument("-o", dest="out", metavar="<output_file>",
+                            help="Output file", required=True)
+    required.add_argument("-f", dest="out_format", choices=["qeexo_v2_csv"],
+                            help="Output data format", required=True)
 
     optional = parser.add_argument_group("optional")
-    optional.add_argument("--label", help="Qeexo class label for sensor data", default='')
-    optional.add_argument("--interval", help="Qeexo timestamp interval in ms", type=int, default=50)
+    optional.add_argument("--label", dest="label", metavar="'label'",
+                            help="Qeexo class label for sensor data (default: %(default)s)", default=None)
+    optional.add_argument("--interval", dest="interval", metavar="<interval>",
+                            help="Qeexo timestamp interval in ms (default: %(default)s)", type=int, default=50)
 
     args = parser.parse_args()
 
@@ -270,15 +280,16 @@ def main():
 
     # Load data from .yml file
     meta_data = {}
-    i = 0
+    sensor_name = []
     for filename in args.yaml:
         try:
             file = open(filename, "r")
-            meta_data[i] = yaml.load(file, Loader=yaml.FullLoader)["sds"]["content"]
+            yaml_data = yaml.load(file, Loader=yaml.FullLoader)["sds"]
+            sensor_name.append(yaml_data["name"])
+            meta_data[sensor_name[-1]] = yaml_data["content"]
             file.close()
         except Exception as e:
             sys.exit(f"Error: {e}")
-        i += 1
 
     # Load data from .sds file
     Record = RecordManager()
@@ -287,15 +298,19 @@ def main():
     for filename in args.sds:
         try:
             file = open(filename, "rb")
-            data[i] = Record.getData(file)
+            data[sensor_name[i]] = Record.getData(file)
             file.close()
         except Exception as e:
             sys.exit(f"Error: {e}")
         i += 1
 
     # CSV
-    createCSV(args.out, args.sds)
-    writeCSV(args.interval, data, meta_data, args.label)
+    if "csv" in args.out_format:
+        output_filename = args.out.split('.csv')[0]
+        createCSV(output_filename)
+
+        if args.out_format == "qeexo_v2_csv":
+            writeQeexoV2CSV(args, data, meta_data)
 
 
 if __name__ == "__main__":
