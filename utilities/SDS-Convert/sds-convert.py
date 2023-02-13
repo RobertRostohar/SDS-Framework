@@ -21,6 +21,7 @@ import csv
 import sys
 from struct import calcsize, unpack
 
+import numpy as np
 import yaml
 
 
@@ -177,6 +178,93 @@ def prepareData(meta_data, raw_data, data_manipulation):
         desc_n += 1
 
     return sensor_data
+
+# Write data to CSV file, simple format
+# Only supports one sensor at a time
+def writeSimpleCSV(args, data, meta_data):
+    normalize = args.normalize
+    csv_start_tick = args.start_tick
+    csv_stop_tick = args.stop_tick
+
+    # Automatically generate new column for each sensor channel
+    csv_header = ['timestamp']
+    for channel in meta_data:
+        channel_name = channel["value"]
+        csv_header.append(channel_name)
+
+    # Write header to CSV file
+    writer.writerow(csv_header)
+
+    # Convert [ms] to [s]
+    timestamp = [t/1000 for t in data["timestamp"]]
+    data_size = data["data_size"]
+
+    cnt = 0
+    cnt_max = len(timestamp)
+
+    while True:
+        # Break while loop if end of file is reached
+        if cnt == cnt_max:
+            break
+
+        # Create a list of lists, based on the number of channels
+        record_row = [[] for i in range(0, len(meta_data))]
+
+        # Extract needed data and flush used bytes from buffer
+        raw_data  = data["raw_data"][:data_size[cnt]]
+        data["raw_data"] = data["raw_data"][data_size[cnt]:]
+
+        # Convert raw data according to description in meta data
+        record_row = prepareData(meta_data, raw_data, data_manipulation=True)
+
+        # Prepare and write CSV row to output file if record_row is not empty
+        if record_row != [[] for i in range(0, len(meta_data))]:
+            csv_timestamp = timestamp[cnt]
+            # Normalize output timestamps
+            if normalize == True:
+                csv_timestamp -= timestamp[0]
+            # Interpolate timestamps if there is more than one data point in this record
+            if len(record_row[0]) > 1:
+                # Get number of samples in this record
+                n_samples = len(record_row[0])
+
+                # Reuse previous time difference to interpolate timestamps for final record
+                if cnt == (cnt_max-1):
+                    csv_timestamp_next = csv_timestamp + (csv_timestamp - csv_timestamp_previous)
+                else:
+                    csv_timestamp_next = timestamp[cnt + 1]
+                    if normalize == True:
+                        csv_timestamp_next -= timestamp[0]
+
+                # Interpolate timestamps between current and next record, based on the number of
+                # data points in current record
+                tmp_time = np.linspace(csv_timestamp, csv_timestamp_next,  n_samples + 1)[:-1]
+                csv_timestamp_previous = csv_timestamp
+
+                # Write generated CSV row to output file
+                for t in range(0, len(tmp_time)):
+                    # If start/stop tick parameters are specified, write to output file
+                    # when timestamps are between selected boundaries
+                    if (csv_start_tick == None) or (tmp_time[t] >= csv_start_tick):
+                        if (csv_stop_tick == None) or (csv_stop_tick > tmp_time[t]):
+                            tmp_record_row = [record_row[i][t] for i in range(len(record_row))]
+                            writer.writerow([float(tmp_time[t])] + tmp_record_row)
+                        else:
+                            break
+            else:
+                # If start/stop tick parameters are specified, write to output file
+                # when timestamps are between selected boundaries
+                if (csv_start_tick == None) or (csv_timestamp >= csv_start_tick):
+                    if (csv_stop_tick == None) or (csv_stop_tick > csv_timestamp):
+                        # Write generated CSV row to output file
+                        writer.writerow([float(csv_timestamp)] + record_row[0])
+                    else:
+                        break
+            cnt += 1
+        else:
+            break
+
+
 # Write data to CSV file using Qeexo V2 format
 def writeQeexoV2CSV(args, data, meta_data):
     interval = args.interval
@@ -262,6 +350,8 @@ def writeQeexoV2CSV(args, data, meta_data):
             else:
                 tmp_csv_timestamp = csv_timestamp
 
+            # If start/stop tick parameters are specified, write to output file
+            # when timestamps are between selected boundaries
             if (csv_start_tick == None) or (tmp_csv_timestamp >= csv_start_tick):
                 if (csv_stop_tick == None) or (csv_stop_tick > tmp_csv_timestamp):
                     writer.writerow([tmp_csv_timestamp] + csv_row + [args.label])
@@ -284,16 +374,16 @@ def main():
                             help="SDS data recording file", nargs="+", required=True)
     required.add_argument("-o", dest="out", metavar="<output_file>",
                             help="Output file", required=True)
-    required.add_argument("-f", dest="out_format", choices=["qeexo_v2_csv"],
+    required.add_argument("-f", dest="out_format", choices=["simple_csv", "qeexo_v2_csv"],
                             help="Output data format", required=True)
 
     optional = parser.add_argument_group("optional")
     optional.add_argument("--normalize", dest="normalize",
                             help="Normalize timestamps so they start with 0", action="store_true")
     optional.add_argument("--start-tick", dest="start_tick", metavar="<start-tick>",
-                            help="Exported data start tick (default: %(default)s)", type=int, default=None)
+                            help="Exported data start tick (default: %(default)s)", type=float, default=None)
     optional.add_argument("--stop-tick", dest="stop_tick", metavar="<stop-tick>",
-                            help="Exported data stop tick (default: %(default)s)", type=int, default=None)
+                            help="Exported data stop tick (default: %(default)s)", type=float, default=None)
     optional.add_argument("--label", dest="label", metavar="'label'",
                             help="Qeexo class label for sensor data (default: %(default)s)", default=None)
     optional.add_argument("--interval", dest="interval", metavar="<interval>",
@@ -338,6 +428,11 @@ def main():
 
         if args.out_format == "qeexo_v2_csv":
             writeQeexoV2CSV(args, data, meta_data)
+        elif args.out_format == "simple_csv":
+            # Only used for one sensor
+            if (len(args.yaml) > 1) or (len(args.sds) > 1):
+                sys.exit("Simple CSV file format only supports 1 YAML and 1 SDS file")
+            writeSimpleCSV(args, data[sensor_name[0]], meta_data[sensor_name[0]])
 
 
 if __name__ == "__main__":
