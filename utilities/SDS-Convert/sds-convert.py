@@ -19,6 +19,7 @@
 import argparse
 import csv
 import sys
+import wave
 from struct import calcsize, unpack
 
 import numpy as np
@@ -139,6 +140,15 @@ def createCSV(filename):
     try:
         csv_file = open(f"{filename}.csv", "w", newline='')
         writer = csv.writer(csv_file)
+    except Exception as e:
+        sys.exit(f"Error: {e}")
+
+# Open CSV file and create writer
+def createWAV(filename):
+    global wave_file
+
+    try:
+        wave_file = wave.open(f"{filename}.wav", "wb")
     except Exception as e:
         sys.exit(f"Error: {e}")
 
@@ -363,6 +373,21 @@ def writeQeexoV2CSV(args, data, meta_data):
 
     csv_file.close()
 
+    # Create and write WAV file with parameters from metadata file
+def writeAudioWAV(framerate, data, meta_data):
+    raw_data = data["raw_data"]
+    n_channels = len(meta_data)
+    d_type = getDataType(meta_data[0]["type"])
+    sample_width = calcsize(d_type)
+
+    # Set audio parameters and write binary data to file
+    wave_file.setnchannels(n_channels)
+    wave_file.setsampwidth(sample_width)
+    wave_file.setframerate(framerate)
+    wave_file.writeframes(raw_data)
+    wave_file.close()
+
+
 # Main function
 def main():
     parser = argparse.ArgumentParser(description="Convert SDS data to selected format")
@@ -374,7 +399,7 @@ def main():
                             help="SDS data recording file", nargs="+", required=True)
     required.add_argument("-o", dest="out", metavar="<output_file>",
                             help="Output file", required=True)
-    required.add_argument("-f", dest="out_format", choices=["simple_csv", "qeexo_v2_csv"],
+    required.add_argument("-f", dest="out_format", choices=["simple_csv", "qeexo_v2_csv", "audio_wav"],
                             help="Output data format", required=True)
 
     optional = parser.add_argument_group("optional")
@@ -396,13 +421,15 @@ def main():
         sys.exit(f"Invalid interval option: {args.interval} ms")
 
     # Load data from .yml file
-    meta_data = {}
     sensor_name = []
+    meta_data = {}
+    sensor_frequency = {}
     for filename in args.yaml:
         try:
             file = open(filename, "r")
             yaml_data = yaml.load(file, Loader=yaml.FullLoader)["sds"]
             sensor_name.append(yaml_data["name"])
+            sensor_frequency[sensor_name[-1]] = yaml_data["frequency"]
             meta_data[sensor_name[-1]] = yaml_data["content"]
             file.close()
         except Exception as e:
@@ -431,8 +458,18 @@ def main():
         elif args.out_format == "simple_csv":
             # Only used for one sensor
             if (len(args.yaml) > 1) or (len(args.sds) > 1):
-                sys.exit("Simple CSV file format only supports 1 YAML and 1 SDS file")
+                sys.exit("Simple CSV file format only supports 1 metadata and 1 SDS file")
             writeSimpleCSV(args, data[sensor_name[0]], meta_data[sensor_name[0]])
+
+    elif "wav" in args.out_format:
+        output_filename = args.out.split('.wav')[0]
+        createWAV(output_filename)
+
+        if args.out_format == "audio_wav":
+            # Only used for one sensor
+            if (len(args.yaml) > 1) or (len(args.sds) > 1):
+                sys.exit("Audio WAV file format only supports 1 metadata and 1 SDS file")
+            writeAudioWAV(sensor_frequency[sensor_name[0]], data[sensor_name[0]], meta_data[sensor_name[0]])
 
 
 if __name__ == "__main__":

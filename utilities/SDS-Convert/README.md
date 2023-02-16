@@ -1,5 +1,5 @@
 # SDS-Convert
-Convert SDS data recordings to selected format, based on descriptions found in YAML files.  
+Convert SDS data recordings to selected format, based on descriptions found in metadata (YAML) files.  
 By default raw timestamps are used for the output file. User can override this behaviour using `--normalize` flag.
 Output timestamps will then start with 0. User can also select start and stop tick for the data to be converter to the
 specified format using `--start-tick <tick>` and `--stop-tick <tick>` respectively. Both parameters are based on 
@@ -24,6 +24,12 @@ timestamp format in the output file.
 
    Timestamps in the output file will be milliseconds in integer format type. Start and stop tick arguments are also
    integer numbers \[*ms*\].
+
+- **Audio WAV**  
+   Format flag: `-f audio_wav`
+
+   Convert .sds to audio WAV format. It takes one sensor and appends required wave header, derived from the
+   parameters in the metadata file.
 
 ## Set-up and requirements
 ### Requirements
@@ -58,7 +64,7 @@ python sds-convert.py --help
 ```
 
 ```
-usage: sds-convert.py [-h] -y <yaml_file> [<yaml_file> ...] -s <sds_file> [<sds_file> ...] -o <output_file> -f {simple_csv,qeexo_v2_csv} [--normalize] [--start-tick <start-tick>] [--stop-tick <stop-tick>] [--label 'label'] [--interval <interval>]
+usage: sds-convert.py [-h] -y <yaml_file> [<yaml_file> ...] -s <sds_file> [<sds_file> ...] -o <output_file> -f {simple_csv,qeexo_v2_csv,audio_wav} [--normalize] [--start-tick <start-tick>] [--stop-tick <stop-tick>] [--label 'label'] [--interval <interval>]
 
 Convert SDS data to selected format
 
@@ -71,7 +77,7 @@ required:
   -s <sds_file> [<sds_file> ...]
                         SDS data recording file
   -o <output_file>      Output file
-  -f {simple_csv,qeexo_v2_csv}
+  -f {simple_csv,qeexo_v2_csv,audio_wav}
                         Output data format
 
 optional:
@@ -90,7 +96,7 @@ To convert data into selected format run:
 ```
 python sds-convert.py -y <description_filename>.yml [<description_filename2>.yml ...] -s <sds_data_filename>.sds [<sds_data_filename2>.sds ...] -o <output_file> -f <format> [--normalize] [--label "label'] [--interval <interval>]
 ```
-Note that YAML and SDS file pairs must be passed as arguments in the same order to ensure recorded data
+Note that metadata and SDS file pairs must be passed as arguments in the same order to ensure recorded data
 is decoded correctly.
 
 ### Examples
@@ -139,4 +145,10 @@ is decoded correctly.
    - Qeexo V2 CSV (timestamps in ms)
       ```
       python sds-convert.py -y Gyroscope.sds.yaml Accelerometer.sds.yaml -s Gyroscope.0.sds Accelerometer.0.sds -o sensor_fusion.csv --normalize -f qeexo_v2_csv --start-tick 200 --stop-tick 300
+      ```
+
+- Use case with audio format:
+   - Audio WAV
+      ```
+      python sds-convert.py -y Microphone.sds.yml -s Microphone.0.sds -f audio_wav -o microphone.wav
       ```
