@@ -1,15 +1,15 @@
 # SDS-View
-View time based plot of SDS data recording, based on the description found in YAML file. 
+View time based plot of SDS data recording, based on the description found in metadata (YAML) file. 
 
 Horizontal time scale is derived from the number of data points in a recording and frequency 
-provided in the YAML description. All plots form a single recording will be displayed on the 
+provided in the metadata description. All plots form a single recording will be displayed on the 
 same figure (shared vertical scale).
 
-If there are 3 values described in the YAML file, an additional 3D view will be displayed.  
+If there are 3 values described in the metadata file, an additional 3D view will be displayed.  
 The tool also supports plotting of multiple recordings at the same time, by listing their paths 
 after the `-s` flag.  
 Note that in this case all recordings will be processed and decoded based on the description in 
-the YAML file listed after the `-y` flag.
+the metadata file listed after the `-y` flag.
 
 ## Limitations
 - Data in recording must all be of the same type (float, uint32_t, uint16_t, ...)
