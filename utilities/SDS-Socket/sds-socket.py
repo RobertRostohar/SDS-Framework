@@ -16,10 +16,10 @@
 
 # SDS I/O TCP
 
-import sys
-
 import os.path as path
 import socket
+import sys
+
 
 class sdsio_manager:
   def __init__(self):
@@ -32,7 +32,7 @@ class sdsio_manager:
     response = bytearray()
 
     if mode == 1:
-      # Write mode 
+      # Write mode
       fname = f"{name}.{file_index}.sds"
       while path.exists(fname) == True:
         file_index = file_index + 1
@@ -94,9 +94,9 @@ class sdsio_manager:
     # Open
     if command == 1:
       response = self.__open(argument, data.decode('utf-8').split("\0")[0])
-    # Close 
+    # Close
     elif command == 2:
-      self.__close(sdsio_id) 
+      self.__close(sdsio_id)
     # Write
     elif command == 3:
       self.__write(sdsio_id, data)
@@ -133,7 +133,7 @@ def main():
 
   request_buf_size  = 0
   request_buf       = bytearray()
- 
+
   manager = sdsio_manager()
 
   sock_listening = start_server()
@@ -154,7 +154,7 @@ def main():
         sock, addr = sock_listening.accept()
         print(f"Device connected.\n")
         print(f"  Device IP: {addr}\n")
-    except Exception as e: 
+    except Exception as e:
       print(f"Socket recv error: {e}\n")
       sys.exit(1)
     except KeyboardInterrupt:
@@ -164,7 +164,7 @@ def main():
     stream_buf_cnt = 0
 
     while stream_buf_cnt < len(stream_buf):
-      
+
       if request_buf_size == 0:
         # Request buffer is empty. Get new request
         cnt = header_size - len(header_buf)
@@ -206,7 +206,7 @@ def main():
         if response:
           try:
             sock.send(bytes(response))
-          except socket.error as e: 
+          except socket.error as e:
             print(f"Socket send error: {e}\n")
             sys.exit(1)
 

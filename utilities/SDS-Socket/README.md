@@ -21,7 +21,7 @@ Target and PC must be connected to the same local network.
 
 The server is started by running the following command:
 ```
-python SDS-Socket.py
+python sds-socket.py
 ```
 
 >Note: The server is stopped when terminating the terminal which started the server!
