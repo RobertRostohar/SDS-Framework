@@ -69,4 +69,12 @@
 #define SENSOR5_FIFO_SIZE       6U
 #define SENSOR5_DATA_THRESHOLD  0U
 
+// Microphone
+#define SENSOR6_NAME            "Microphone"
+#define SENSOR6_DMA_MODE        1U
+#define SENSOR6_SAMPLE_SIZE     2U
+#define SENSOR6_BLOCK_INTERVAL  200000U
+#define SENSOR6_BLOCK_SIZE      6400
+#define SENSOR6_BLOCK_NUM       16U
+
 #endif /* SENSOR_CONFIG_H */
