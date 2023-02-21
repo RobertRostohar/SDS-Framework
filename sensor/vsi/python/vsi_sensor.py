@@ -119,7 +119,7 @@ class RecordManager:
     # Calculate average interval based on number of samples/blocks in current time window
     def __getInterval(self):
         logging.info("Calculate new Interval")
-        if (CONTROL & CONTROL_DMA_Msk) == 1:
+        if (CONTROL & CONTROL_DMA_Msk) != 0:
             size = FIFO_SIZE
         else:
             size = SAMPLE_SIZE
