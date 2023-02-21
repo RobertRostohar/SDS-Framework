@@ -37,6 +37,7 @@ int main (void) {
   VSI0_Initialize();                    // Initialize VSI0
   VSI3_Initialize();                    // Initialize VSI3
   VSI4_Initialize();                    // Initialize VSI4
+  VSI6_Initialize();                    // Initialize VSI6
 
 #if defined(RTE_Compiler_EventRecorder) && \
     (defined(__MICROLIB) || \
