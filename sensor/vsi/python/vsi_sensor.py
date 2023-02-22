@@ -293,11 +293,8 @@ def closeFile():
 # @param value status bits to clear
 # @return IRQ_Status return updated register
 def wrIRQ(IRQ_Status, value):
-    if (value & IRQ_Status_Threshold_Msk) == 0:
-        IRQ_Status &= ~IRQ_Status_Threshold_Msk
-
-    if (value & IRQ_Status_Overflow_Msk) == 0:
-        IRQ_Status &= ~IRQ_Status_Overflow_Msk
+    IRQ_Status_Clear = IRQ_Status & ~value
+    IRQ_Status &= ~IRQ_Status_Clear
 
     return IRQ_Status
 
