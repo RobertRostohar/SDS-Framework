@@ -331,6 +331,9 @@ def timerEvent(IRQ_Status):
         if FIFO.threshold:
             IRQ_Status |= IRQ_Status_Threshold_Msk
             logging.debug("Threshold event")
+    else:
+        IRQ_Status |= IRQ_Status_Threshold_Msk
+        logging.debug("DMA Threshold event")
 
     return IRQ_Status
 
