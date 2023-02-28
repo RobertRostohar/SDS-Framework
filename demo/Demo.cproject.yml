@@ -4,16 +4,17 @@ project:
   # packs:
   #   - pack: ARM::CMSIS
 
-  # interfaces:
-  #   - provides:
-  #     - RTOS2:
-  #   - consumes:
-  #     - IoT_Socket:
-  #     - C_VIO:
-  #     - STDOUT:
-  #     - STDIN:
-  #     - STDERR:
-  #     - Heap : 65536
+  connections:
+    - connect: Demo Application
+      provides:
+        - CMSIS-RTOS2
+      consumes:
+        - IoT_Socket
+        - CMSIS_VIO
+        - STDIN
+        - STDOUT
+        - STDERR
+        - Heap: 65536
 
   add-path:
     - ../sds/include
