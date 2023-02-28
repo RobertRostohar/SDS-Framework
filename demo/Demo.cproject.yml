@@ -1,4 +1,4 @@
-# yaml-language-server: $schema=https://raw.githubusercontent.com/Open-CMSIS-Pack/devtools/schemas/projmgr/1.0.0/tools/projmgr/schemas/cproject.schema.json
+# yaml-language-server: $schema=https://raw.githubusercontent.com/Open-CMSIS-Pack/devtools/schemas/projmgr/1.5.0/tools/projmgr/schemas/cproject.schema.json
 
 project:
   # packs:
@@ -41,15 +41,15 @@ project:
   layers:
     # Socket
     - layer: ./Socket/WiFi/Socket.clayer.yml
-      for-type:
+      for-context:
         - +HW
     - layer: ./Socket/VSocket/Socket.clayer.yml
-      for-type:
+      for-context:
         - +AVH
     # Board
     - layer: ./Board/B-U585I-IOT02A/Board.clayer.yml
-      for-type: 
+      for-context: 
         - +HW
     - layer: ./Board/AVH_MPS3_Corstone-300/Board.clayer.yml
-      for-type: 
+      for-context: 
         - +AVH
