@@ -7,7 +7,7 @@
   ******************************************************************************
   * @attention
   *
-  * Copyright (c) 2022 STMicroelectronics.
+  * Copyright (c) 2023 STMicroelectronics.
   * All rights reserved.
   *
   * This software is licensed under terms that can be found in the LICENSE file
@@ -145,8 +145,8 @@ extern void app_initialize (void);
 #define ARDUINO_D9_DATAREADY_GPIO_Port GPIOA
 #define T_VCP_TX_Pin GPIO_PIN_9
 #define T_VCP_TX_GPIO_Port GPIOA
-#define USB_C_PA11_Pin GPIO_PIN_11
-#define USB_C_PA11_GPIO_Port GPIOA
+#define USB_C_N_Pin GPIO_PIN_11
+#define USB_C_N_GPIO_Port GPIOA
 #define MIC_CCK1_Pin GPIO_PIN_10
 #define MIC_CCK1_GPIO_Port GPIOF
 #define OCTOSPI_R_IO3_Pin GPIO_PIN_6
@@ -170,6 +170,7 @@ extern void app_initialize (void);
 #define OCTOSPI_F_DQS_GPIO_Port GPIOF
 #define USB_UCPD_FLT_Pin GPIO_PIN_8
 #define USB_UCPD_FLT_GPIO_Port GPIOE
+#define USB_UCPD_FLT_EXTI_IRQn EXTI8_IRQn
 #define ARDUINO_D12_SPI1_MISO_Pin GPIO_PIN_14
 #define ARDUINO_D12_SPI1_MISO_GPIO_Port GPIOE
 #define OCTOSPI_R_CLK_P_Pin GPIO_PIN_10
@@ -206,6 +207,7 @@ extern void app_initialize (void);
 #define MXCHIP_RESET_GPIO_Port GPIOF
 #define ARDUINO_D10_SPI1_NSS_Pin GPIO_PIN_12
 #define ARDUINO_D10_SPI1_NSS_GPIO_Port GPIOE
+
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */

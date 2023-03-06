@@ -6,7 +6,7 @@
   ******************************************************************************
   * @attention
   *
-  * Copyright (c) 2022 STMicroelectronics.
+  * Copyright (c) 2023 STMicroelectronics.
   * All rights reserved.
   *
   * This software is licensed under terms that can be found in the LICENSE file
@@ -21,20 +21,30 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "cmsis_os2.h"
+
+#include <stdbool.h>
+
 #include "RTE_Components.h"
+
+#include "cmsis_os2.h"
+
 #ifdef    RTE_VIO_BOARD
 #include "cmsis_vio.h"
 #endif
-#if defined(RTE_Compiler_EventRecorder)
+
+#ifdef    RTE_Compiler_EventRecorder
 #include "EventRecorder.h"
 #endif
 
+#ifdef    RTE_Drivers_WiFi_EMW3080_SPI_B_U585I_IOT02A
 #include "WiFi_EMW3080.h"
+#endif
+
 #include "audio_drv.h"
 
 #include "b_u585i_iot02a_env_sensors.h"
 #include "b_u585i_iot02a_motion_sensors.h"
+#include "b_u585i_iot02a_usbpd_pwr.h"
 #include "ism330dhcx.h"
 
 ISM330DHCX_Object_t ISM330DHCX_Obj;
@@ -55,6 +65,8 @@ ISM330DHCX_Object_t ISM330DHCX_Obj;
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
+ADC_HandleTypeDef hadc4;
+
 MDF_HandleTypeDef AdfHandle0;
 MDF_FilterConfigTypeDef AdfFilterConfig0;
 
@@ -63,6 +75,10 @@ I2C_HandleTypeDef hi2c2;
 
 OSPI_HandleTypeDef hospi1;
 OSPI_HandleTypeDef hospi2;
+
+RNG_HandleTypeDef hrng;
+
+RTC_HandleTypeDef hrtc;
 
 SPI_HandleTypeDef hspi1;
 SPI_HandleTypeDef hspi2;
@@ -87,6 +103,7 @@ static void SystemPower_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_GPDMA1_Init(void);
 static void MX_ICACHE_Init(void);
+static void MX_ADC4_Init(void);
 static void MX_ADF1_Init(void);
 static void MX_I2C1_Init(void);
 static void MX_I2C2_Init(void);
@@ -97,8 +114,10 @@ static void MX_SPI2_Init(void);
 static void MX_USART1_UART_Init(void);
 static void MX_USART3_UART_Init(void);
 static void MX_UART4_Init(void);
-static void MX_USB_OTG_FS_PCD_Init(void);
 static void MX_UCPD1_Init(void);
+static void MX_USB_OTG_FS_PCD_Init(void);
+static void MX_RNG_Init(void);
+static void MX_RTC_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -142,19 +161,55 @@ HAL_StatusTypeDef HAL_InitTick(uint32_t TickPriority) {
   return HAL_OK;
 }
 
+#ifdef RTE_Drivers_USBH0
 /**
-  * @brief  EXTI line rising detection callback.
-  * @param  GPIO_Pin: Specifies the port pin connected to corresponding EXTI line.
-  * @retval None
-  */
+  \fn          void USBH_VbusOnOff (bool vbus)
+  \brief       Drive VBUS on/off.
+  \param[in]   vbus
+                - \b false VBUS off
+                - \b true  VBUS on
+  \return      none
+*/
+void USBH_VbusOnOff (bool vbus) {
+  if (vbus) {                           // VBUS power on
+    BSP_USBPD_PWR_VBUSOn (0U);
+  } else {                              // VBUS power off
+    BSP_USBPD_PWR_VBUSOff(0U);
+  }
+}
+#endif
+
+/**
+  \fn          void HAL_GPIO_EXTI_Falling_Callback (uint16_t GPIO_Pin)
+  \brief       EXTI line falling detection callback.
+  \param[in]   GPIO_Pin Specifies the port pin connected to corresponding EXTI line.
+  \return      none
+*/
+void HAL_GPIO_EXTI_Falling_Callback (uint16_t GPIO_Pin) {
+  if (GPIO_Pin == USB_UCPD_FLT_Pin) {
+#ifdef RTE_Drivers_USBH0
+    /* Call BSP USBPD PWR callback */
+    BSP_USBPD_PWR_EventCallback(USBPD_PWR_TYPE_C_PORT_1);
+#endif
+  }
+}
+
+/**
+  \fn          void HAL_GPIO_EXTI_Rising_Callback (uint16_t GPIO_Pin)
+  \brief       EXTI line rising detection callback.
+  \param[in]   GPIO_Pin Specifies the port pin connected to corresponding EXTI line.
+  \return      none
+*/
 void HAL_GPIO_EXTI_Rising_Callback(uint16_t GPIO_Pin) {
   switch (GPIO_Pin) {
+#ifdef RTE_Drivers_WiFi_EMW3080_SPI_B_U585I_IOT02A
     case (MXCHIP_FLOW_Pin):
       WiFi_EMW3080_Pin_FLOW_Rising_Edge();
       break;
     case (MXCHIP_NOTIFY_Pin):
       WiFi_EMW3080_Pin_NOTIFY_Rising_Edge();
       break;
+#endif
     default:
       break;
   }
@@ -164,9 +219,6 @@ void HAL_GPIO_EXTI_Rising_Callback(uint16_t GPIO_Pin) {
   * AudioDrv_Callback
   */
 extern void AudioDrv_Callback (uint32_t event);
-__weak void AudioDrv_Callback (uint32_t event) {
-  (void)event;
-}
 
 /**
   * BSP Sensor Init
@@ -247,18 +299,20 @@ int main(void)
   MX_GPIO_Init();
   MX_GPDMA1_Init();
   MX_ICACHE_Init();
+  MX_ADC4_Init();
+  MX_ADF1_Init();
   MX_I2C1_Init();
   MX_I2C2_Init();
   MX_OCTOSPI1_Init();
   MX_OCTOSPI2_Init();
-  MX_SPI1_Init();
   MX_SPI2_Init();
   MX_USART1_UART_Init();
-  MX_USART3_UART_Init();
-  MX_UART4_Init();
-  MX_USB_OTG_FS_PCD_Init();
   MX_UCPD1_Init();
+  MX_USB_OTG_FS_PCD_Init();
+  MX_RNG_Init();
+  MX_RTC_Init();
   /* USER CODE BEGIN 2 */
+
 #ifdef RTE_VIO_BOARD
   vioInit();
 #endif
@@ -269,6 +323,14 @@ int main(void)
     (defined(__MICROLIB) || \
     !(defined(RTE_CMSIS_RTOS2_RTX5) || defined(RTE_CMSIS_RTOS2_FreeRTOS)))
   EventRecorderInitialize(EventRecordAll, 1U);
+#endif
+
+#ifdef RTE_Drivers_USBH0
+  /* Enable VBUS driving on USB Type-C Port */
+  BSP_USBPD_PWR_Init        (USBPD_PWR_TYPE_C_PORT_1);
+  BSP_USBPD_PWR_SetRole     (USBPD_PWR_TYPE_C_PORT_1, POWER_ROLE_SOURCE);
+  BSP_USBPD_PWR_SetPowerMode(USBPD_PWR_TYPE_C_PORT_1, USBPD_PWR_MODE_NORMAL);
+  BSP_USBPD_PWR_VBUSInit    (USBPD_PWR_TYPE_C_PORT_1);
 #endif
 
   osKernelInitialize();                         /* Initialize CMSIS-RTOS2 */
@@ -304,13 +366,18 @@ void SystemClock_Config(void)
     Error_Handler();
   }
 
-  /** Initializes the CPU, AHB and APB busses clocks
+  /** Initializes the CPU, AHB and APB buses clocks
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI48|RCC_OSCILLATORTYPE_MSI;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI48|RCC_OSCILLATORTYPE_HSI
+                              |RCC_OSCILLATORTYPE_LSI|RCC_OSCILLATORTYPE_MSI;
+  RCC_OscInitStruct.HSIState = RCC_HSI_ON;
   RCC_OscInitStruct.HSI48State = RCC_HSI48_ON;
+  RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
+  RCC_OscInitStruct.LSIState = RCC_LSI_ON;
   RCC_OscInitStruct.MSIState = RCC_MSI_ON;
   RCC_OscInitStruct.MSICalibrationValue = RCC_MSICALIBRATION_DEFAULT;
   RCC_OscInitStruct.MSIClockRange = RCC_MSIRANGE_4;
+  RCC_OscInitStruct.LSIDiv = RCC_LSI_DIV1;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_MSI;
   RCC_OscInitStruct.PLL.PLLMBOOST = RCC_PLLMBOOST_DIV1;
@@ -326,7 +393,7 @@ void SystemClock_Config(void)
     Error_Handler();
   }
 
-  /** Initializes the CPU, AHB and APB busses clocks
+  /** Initializes the CPU, AHB and APB buses clocks
   */
   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
                               |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2
@@ -350,6 +417,74 @@ void SystemClock_Config(void)
 static void SystemPower_Config(void)
 {
   HAL_PWREx_EnableVddIO2();
+
+  /*
+   * Switch to SMPS regulator instead of LDO
+   */
+  if (HAL_PWREx_ConfigSupply(PWR_SMPS_SUPPLY) != HAL_OK)
+  {
+    Error_Handler();
+  }
+}
+
+/**
+  * @brief ADC4 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_ADC4_Init(void)
+{
+
+  /* USER CODE BEGIN ADC4_Init 0 */
+
+  /* USER CODE END ADC4_Init 0 */
+
+  ADC_ChannelConfTypeDef sConfig = {0};
+
+  /* USER CODE BEGIN ADC4_Init 1 */
+
+  /* USER CODE END ADC4_Init 1 */
+
+  /** Common config
+  */
+  hadc4.Instance = ADC4;
+  hadc4.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV1;
+  hadc4.Init.Resolution = ADC_RESOLUTION_12B;
+  hadc4.Init.DataAlign = ADC_DATAALIGN_RIGHT;
+  hadc4.Init.ScanConvMode = ADC4_SCAN_DISABLE;
+  hadc4.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
+  hadc4.Init.LowPowerAutoPowerOff = ADC_LOW_POWER_NONE;
+  hadc4.Init.LowPowerAutoWait = DISABLE;
+  hadc4.Init.ContinuousConvMode = DISABLE;
+  hadc4.Init.NbrOfConversion = 1;
+  hadc4.Init.DiscontinuousConvMode = DISABLE;
+  hadc4.Init.ExternalTrigConv = ADC_SOFTWARE_START;
+  hadc4.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
+  hadc4.Init.DMAContinuousRequests = DISABLE;
+  hadc4.Init.TriggerFrequencyMode = ADC_TRIGGER_FREQ_LOW;
+  hadc4.Init.Overrun = ADC_OVR_DATA_PRESERVED;
+  hadc4.Init.SamplingTimeCommon1 = ADC4_SAMPLETIME_1CYCLE_5;
+  hadc4.Init.SamplingTimeCommon2 = ADC4_SAMPLETIME_1CYCLE_5;
+  hadc4.Init.OversamplingMode = DISABLE;
+  if (HAL_ADC_Init(&hadc4) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure Regular Channel
+  */
+  sConfig.Channel = ADC_CHANNEL_5;
+  sConfig.Rank = ADC4_REGULAR_RANK_1;
+  sConfig.SamplingTime = ADC4_SAMPLINGTIME_COMMON_1;
+  sConfig.OffsetNumber = ADC_OFFSET_NONE;
+  sConfig.Offset = 0;
+  if (HAL_ADC_ConfigChannel(&hadc4, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN ADC4_Init 2 */
+
+  /* USER CODE END ADC4_Init 2 */
 
 }
 
@@ -587,7 +722,7 @@ static void MX_OCTOSPI1_Init(void)
   hospi1.Init.FifoThreshold = 1;
   hospi1.Init.DualQuad = HAL_OSPI_DUALQUAD_DISABLE;
   hospi1.Init.MemoryType = HAL_OSPI_MEMTYPE_APMEMORY;
-  hospi1.Init.DeviceSize = 24;
+  hospi1.Init.DeviceSize = 23;
   hospi1.Init.ChipSelectHighTime = 1;
   hospi1.Init.FreeRunningClock = HAL_OSPI_FREERUNCLK_DISABLE;
   hospi1.Init.ClockMode = HAL_OSPI_CLOCK_MODE_0;
@@ -681,6 +816,81 @@ static void MX_OCTOSPI2_Init(void)
   /* USER CODE BEGIN OCTOSPI2_Init 2 */
 
   /* USER CODE END OCTOSPI2_Init 2 */
+
+}
+
+/**
+  * @brief RNG Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_RNG_Init(void)
+{
+
+  /* USER CODE BEGIN RNG_Init 0 */
+
+  /* USER CODE END RNG_Init 0 */
+
+  /* USER CODE BEGIN RNG_Init 1 */
+
+  /* USER CODE END RNG_Init 1 */
+  hrng.Instance = RNG;
+  hrng.Init.ClockErrorDetection = RNG_CED_ENABLE;
+  if (HAL_RNG_Init(&hrng) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN RNG_Init 2 */
+
+  /* USER CODE END RNG_Init 2 */
+
+}
+
+/**
+  * @brief RTC Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_RTC_Init(void)
+{
+
+  /* USER CODE BEGIN RTC_Init 0 */
+
+  /* USER CODE END RTC_Init 0 */
+
+  RTC_PrivilegeStateTypeDef privilegeState = {0};
+
+  /* USER CODE BEGIN RTC_Init 1 */
+
+  /* USER CODE END RTC_Init 1 */
+
+  /** Initialize RTC Only
+  */
+  hrtc.Instance = RTC;
+  hrtc.Init.HourFormat = RTC_HOURFORMAT_24;
+  hrtc.Init.AsynchPrediv = 127;
+  hrtc.Init.SynchPrediv = 255;
+  hrtc.Init.OutPut = RTC_OUTPUT_DISABLE;
+  hrtc.Init.OutPutRemap = RTC_OUTPUT_REMAP_NONE;
+  hrtc.Init.OutPutPolarity = RTC_OUTPUT_POLARITY_HIGH;
+  hrtc.Init.OutPutType = RTC_OUTPUT_TYPE_OPENDRAIN;
+  hrtc.Init.OutPutPullUp = RTC_OUTPUT_PULLUP_NONE;
+  hrtc.Init.BinMode = RTC_BINARY_NONE;
+  if (HAL_RTC_Init(&hrtc) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  privilegeState.rtcPrivilegeFull = RTC_PRIVILEGE_FULL_NO;
+  privilegeState.backupRegisterPrivZone = RTC_PRIVILEGE_BKUP_ZONE_NONE;
+  privilegeState.backupRegisterStartZone2 = RTC_BKP_DR0;
+  privilegeState.backupRegisterStartZone3 = RTC_BKP_DR0;
+  if (HAL_RTCEx_PrivilegeModeSet(&hrtc, &privilegeState) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN RTC_Init 2 */
+
+  /* USER CODE END RTC_Init 2 */
 
 }
 
@@ -1121,23 +1331,17 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(MXCHIP_NOTIFY_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : USB_UCPD_FLT_Pin Mems_ISM330DLC_INT1_Pin */
-  GPIO_InitStruct.Pin = USB_UCPD_FLT_Pin|Mems_ISM330DLC_INT1_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
+  /*Configure GPIO pin : USB_UCPD_FLT_Pin */
+  GPIO_InitStruct.Pin = USB_UCPD_FLT_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(USB_UCPD_FLT_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pins : Mems_INT_IIS2MDC_Pin USB_IANA_Pin */
   GPIO_InitStruct.Pin = Mems_INT_IIS2MDC_Pin|USB_IANA_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
-
-  /*Configure GPIO pin : USB_VBUS_SENSE_Pin */
-  GPIO_InitStruct.Pin = USB_VBUS_SENSE_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(USB_VBUS_SENSE_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : MXCHIP_NSS_Pin */
   GPIO_InitStruct.Pin = MXCHIP_NSS_Pin;
@@ -1152,6 +1356,12 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOF, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : Mems_ISM330DLC_INT1_Pin */
+  GPIO_InitStruct.Pin = Mems_ISM330DLC_INT1_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(Mems_ISM330DLC_INT1_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : MIC_SDIN0_Pin */
   GPIO_InitStruct.Pin = MIC_SDIN0_Pin;
@@ -1169,6 +1379,7 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_Init(ARDUINO_D10_SPI1_NSS_GPIO_Port, &GPIO_InitStruct);
 
   /* EXTI interrupt init*/
+  HAL_NVIC_SetPriority(EXTI8_IRQn, 8, 0);
   HAL_NVIC_SetPriority(EXTI14_IRQn, 8, 0);
   HAL_NVIC_EnableIRQ(EXTI14_IRQn);
 
