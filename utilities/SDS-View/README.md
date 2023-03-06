@@ -32,7 +32,7 @@ the metadata file listed after the `-y` flag.
       ```
       python -m venv <env_name>
       ```
-      <sup>Note: Usually **`env`** is used for `<env_name>`</sup>
+      >Note: Usually **`env`** is used for `<env_name>`
    2. Activate created Python environment:
       ```
       <env_name>/Scripts/activate
