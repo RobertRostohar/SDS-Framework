@@ -64,31 +64,26 @@ python sds-convert.py --help
 ```
 
 ```
-usage: sds-convert.py [-h] -y <yaml_file> [<yaml_file> ...] -s <sds_file> [<sds_file> ...] -o <output_file> -f {simple_csv,qeexo_v2_csv,audio_wav} [--normalize] [--start-tick <start-tick>] [--stop-tick <stop-tick>] [--label 'label'] [--interval <interval>]
+usage: sds-convert.py [-h] -y <yaml_file> [<yaml_file> ...] -s <sds_file> [<sds_file> ...] -o <output_file> -f {simple_csv,qeexo_v2_csv,audio_wav}
+                      [--normalize] [--start-tick <start-tick>] [--stop-tick <stop-tick>] [--label 'label'] [--interval <interval>]
 
 Convert SDS data to selected format
 
 options:
-  -h, --help            show this help message and exit
+  -h, --help                              show this help message and exit
 
 required:
-  -y <yaml_file> [<yaml_file> ...]
-                        YAML sensor description file
-  -s <sds_file> [<sds_file> ...]
-                        SDS data recording file
-  -o <output_file>      Output file
-  -f {simple_csv,qeexo_v2_csv,audio_wav}
-                        Output data format
+  -y <yaml_file> [<yaml_file> ...]        YAML sensor description file
+  -s <sds_file> [<sds_file> ...]          SDS data recording file
+  -o <output_file>                        Output file
+  -f {simple_csv,qeexo_v2_csv,audio_wav}  Output data format
 
 optional:
-  --normalize           Normalize timestamps so they start with 0
-  --start-tick <start-tick>
-                        Exported data start tick (default: None)
-  --stop-tick <stop-tick>
-                        Exported data stop tick (default: None)
-  --label 'label'       Qeexo class label for sensor data (default: None)
-  --interval <interval>
-                        Qeexo timestamp interval in ms (default: 50)
+  --normalize                             Normalize timestamps so they start with 0
+  --start-tick <start-tick>               Exported data start tick (default: None)
+  --stop-tick <stop-tick>                 Exported data stop tick (default: None)
+  --label 'label'                         Qeexo class label for sensor data (default: None)
+  --interval <interval>                   Qeexo timestamp interval in ms (default: 50)
 ```
 
 ### Run tool
