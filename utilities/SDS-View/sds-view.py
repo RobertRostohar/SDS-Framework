@@ -166,7 +166,9 @@ def plotData(all_data, data_desc, freq, title, view3D):
 
 # Main function
 def main():
-    parser = argparse.ArgumentParser(description="View SDS data")
+    formatter = lambda prog: argparse.HelpFormatter(prog,max_help_position=60)
+    parser = argparse.ArgumentParser(description="View SDS data",
+                                     formatter_class=formatter)
 
     required = parser.add_argument_group("required")
     required.add_argument("-y", dest="yaml", metavar="<yaml_file>",
