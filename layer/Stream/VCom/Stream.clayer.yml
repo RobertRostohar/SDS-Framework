@@ -1,0 +1,32 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/Open-CMSIS-Pack/devtools/schemas/projmgr/1.5.0/tools/projmgr/schemas/clayer.schema.json
+
+layer:
+  type: Stream
+  # variant: VCom
+  description: Synchronous Data Stream (SDS) with SDS I/O over Virtual COM port
+
+  connections:
+    - connect: Stream VCom
+      consumes:
+        - CMSIS-RTOS2
+        - CMSIS_USB_Device: 0
+      provides:
+        - Stream
+
+  packs:
+    - pack: Keil::MDK-Middleware@7.16.0
+
+  components:
+    - component: Keil::USB&MDK-Plus:CORE&Release
+    - component: Keil::USB&MDK-Plus:Device
+    - component: Keil::USB&MDK-Plus:Device:CDC
+
+  groups:
+    - group: Stream
+      files:
+        - file: ../../../sds/include/sds.h
+        - file: ../../../sds/include/sdsio.h
+        - file: ../../../sds/include/sds_rec.h
+        - file: ../../../sds/source/sds.c
+        - file: ../../../sds/source/sdsio_vcom.c
+        - file: ../../../sds/source/sds_rec.c

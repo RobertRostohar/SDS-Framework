@@ -1,0 +1,27 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/Open-CMSIS-Pack/devtools/schemas/projmgr/1.5.0/tools/projmgr/schemas/clayer.schema.json
+
+layer:
+  type: Stream
+  # variant: Socket
+  description: Synchronous Data Stream (SDS) with SDS I/O over IoT Socket
+
+  connections:
+    - connect: Stream Socket
+      consumes:
+        - CMSIS-RTOS2
+        - IoT_Socket
+      provides:
+        - Stream
+
+  define:
+    - SDSIO_SOCKET
+    
+  groups:
+    - group: Stream
+      files:
+        - file: ../../../sds/include/sds.h
+        - file: ../../../sds/include/sdsio.h
+        - file: ../../../sds/include/sds_rec.h
+        - file: ../../../sds/source/sds.c
+        - file: ../../../sds/source/sdsio_socket.c
+        - file: ../../../sds/source/sds_rec.c
