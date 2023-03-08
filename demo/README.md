@@ -6,9 +6,13 @@ The application reads sensors, optionally records the sensor data and prints the
 Push button (vioBUTTON0) starts and stops the operations.
 
 Demo is available for the following targets:
- - HW: runs on B-U585I-IOT02A board with on-board WiFi module
+ - HW_Socket: runs on B-U585I-IOT02A board using on-board WiFi module
    - reads actual sensor data from hardware
    - records sensor data via socket (using WiFi interface) to files on the host PC
+   - prints sensor data to a terminal
+ - HW_VCom: runs on B-U585I-IOT02A board using on-board VCom (Virtual COM)
+   - reads actual sensor data from hardware
+   - records sensor data via VCom (Virtual COM) to files on the host PC
    - prints sensor data to a terminal
  - AVH: runs on Arm Virtual Hardware (AVH) for MPS3 platform with Corstone-300
    - reads sensor data from files on the host PC (previously recorded)
@@ -54,7 +58,8 @@ WiFi Access Point:
 
 2. Use the `cbuild` command to create executable files.
    ```
-   > cbuild Demo.Debug+HW.cprj
+   > cbuild Demo.Debug+HW_Socket.cprj
+   > cbuild Demo.Debug+HW_VCom.cprj
    > cbuild Demo.Debug+AVH.cprj
    ```
 
@@ -67,11 +72,11 @@ Use a programmer to download the HW image to the hardware target.
 ### HW Target (B-U585I-IOT02A)
 
 Execute the following steps:
- - run `python ../utilities/SDS-Socket/SDS-Socket.py` to start the socket server on the host PC
+ - run [SDSIO-Server](../utilities/SDSIO-Server/README.md) to start the SDS I/O server on the host PC
  - connect the board's ST-Link USB to the PC (provides also power)
  - open terminal on the PC and connect to the board's serial port (Baud rate: 115200)
  - reset the target (press RST button on the board)
- - wait until connected to WiFi (status printed to the terminal)
+ - wait until connected to WiFi when recording data via socket (status printed to the terminal)
  - press USER (vioBUTTON0) button to start/stop reading and recording sensor data
    >Note: The recordings start with index 0 and increment for each subsequent start/stop.
 

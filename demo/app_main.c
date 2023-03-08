@@ -33,7 +33,9 @@ static void __NO_RETURN app_main (void *argument) {
   (void)argument;
 
 #ifdef RECORDER_ENABLED
+#ifdef SDSIO_SOCKET
   status = socket_startup();
+#endif
 #endif
 
   if (status == 0) {
