@@ -3,7 +3,7 @@
 layer:
   type: Stream
   # variant: Socket
-  description: Synchronous Data Stream (SDS) with SDS I/O over IoT Socket
+  description: Synchronous Data Stream (SDS) with Recorder and SDS I/O over IoT Socket
 
   connections:
     - connect: Stream Socket
@@ -11,10 +11,12 @@ layer:
         - CMSIS-RTOS2
         - IoT_Socket
       provides:
-        - Stream
+        - Stream_SDS
+        - Stream_SDS_Recorder
+        - Stream_SDSIO
 
   define:
-    - SDSIO_SOCKET
+    - STREAM_SDSIO_SOCKET
     
   groups:
     - group: Stream

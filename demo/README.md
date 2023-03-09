@@ -6,17 +6,21 @@ The application reads sensors, optionally records the sensor data and prints the
 Push button (vioBUTTON0) starts and stops the operations.
 
 Demo is available for the following targets:
- - HW_Socket: runs on B-U585I-IOT02A board using on-board WiFi module
+ - HW: runs on B-U585I-IOT02A board with on-board WiFi module
    - reads actual sensor data from hardware
-   - records sensor data via socket (using WiFi interface) to files on the host PC
-   - prints sensor data to a terminal
- - HW_VCom: runs on B-U585I-IOT02A board using on-board VCom (Virtual COM)
-   - reads actual sensor data from hardware
-   - records sensor data via VCom (Virtual COM) to files on the host PC
+   - records sensor data via socket (using WiFi interface) or VCom (Virtual COM) to files on the host PC
    - prints sensor data to a terminal
  - AVH: runs on Arm Virtual Hardware (AVH) for MPS3 platform with Corstone-300
    - reads sensor data from files on the host PC (previously recorded)
    - prints sensor data to a terminal
+
+Following build types are available:
+ - Debug: Debug version (no recording)
+ - Release: Release version (no recording)
+ - Socket_Debug: recording via socket (Debug version - only for HW target)
+ - Socket_Release: recording via socket (Release version - only for HW target)
+ - VCom_Debug: recording via VCom (Debug version - only for HW target)
+ - VCom_Release: recording via VCom (Release version - only for HW target)
 
 ## Prerequisites
 
@@ -39,11 +43,11 @@ Demo is available for the following targets:
 
 ## Configure
 
-Host PC IP Address:
+Host PC IP Address (when using socket):
  - Modify the following definitions in [sdsio_socket.c](../sds/source/sdsio_socket.c):
    - `SERVER_IP`: IP address of the host PC running python script (`SDS-Socket.py`)
 
-WiFi Access Point:
+WiFi Access Point (when using socket):
  - Modify the following definitions in [socket_startup.c](Socket/WiFi/socket_startup.c):
    - `SSID`:          WiFi Access Point SSID
    - `PASSWORD`:      WiFi Access Point Password
@@ -58,8 +62,8 @@ WiFi Access Point:
 
 2. Use the `cbuild` command to create executable files.
    ```
-   > cbuild Demo.Debug+HW_Socket.cprj
-   > cbuild Demo.Debug+HW_VCom.cprj
+   > cbuild Demo.Socket_Debug+HW.cprj
+   > cbuild Demo.VCom_Debug+HW.cprj
    > cbuild Demo.Debug+AVH.cprj
    ```
 

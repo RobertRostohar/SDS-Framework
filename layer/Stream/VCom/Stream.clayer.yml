@@ -3,7 +3,7 @@
 layer:
   type: Stream
   # variant: VCom
-  description: Synchronous Data Stream (SDS) with SDS I/O over Virtual COM port
+  description: Synchronous Data Stream (SDS) with Recorder and SDS I/O over Virtual COM port
 
   connections:
     - connect: Stream VCom
@@ -11,13 +11,21 @@ layer:
         - CMSIS-RTOS2
         - CMSIS_USB_Device: 0
       provides:
-        - Stream
+        - Stream_SDS
+        - Stream_SDS_Recorder
+        - Stream_SDSIO
 
   packs:
     - pack: Keil::MDK-Middleware@7.16.0
 
+  define:
+    - STREAM_SDSIO_VCOM
+    
   components:
+    - component: Keil::USB&MDK-Plus:CORE&Debug
+      for-context: .VCom_Debug
     - component: Keil::USB&MDK-Plus:CORE&Release
+      for-context: .VCom_Release
     - component: Keil::USB&MDK-Plus:Device
     - component: Keil::USB&MDK-Plus:Device:CDC
 

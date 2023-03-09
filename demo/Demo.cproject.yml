@@ -7,8 +7,10 @@ project:
       provides:
         - CMSIS-RTOS2
       consumes:
+        - Stream_SDS
+        - Stream_SDS_Recorder
+        - Stream_SDSIO
         - IoT_Socket
-        - Stream
         - CMSIS_VIO
         - STDIN
         - STDOUT

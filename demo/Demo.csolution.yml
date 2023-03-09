@@ -6,32 +6,56 @@ solution:
     - type: Debug
       debug: on
       optimize: none
+      define:
+        - DEBUG
+      variables:
+        - Stream-Layer: ../layer/Stream/SDS/Stream.clayer.yml
     - type: Release
       debug: off
       optimize: balanced
-
-  target-types:
-    - type: HW_Socket
-      board: STMicroelectronics::B-U585I-IOT02A
-      device: STMicroelectronics::STM32U585AIIx
+      variables:
+        - Stream-Layer: ../layer/Stream/SDS/Stream.clayer.yml
+    - type: Socket_Debug
+      debug: on
+      optimize: none
+      define:
+        - RECORDER_ENABLED
+        - DEBUG
+      variables:
+        - Stream-Layer: ../layer/Stream/Socket/Stream.clayer.yml
+    - type: Socket_Release
+      debug: off
+      optimize: balanced
       define:
         - RECORDER_ENABLED
       variables:
         - Stream-Layer: ../layer/Stream/Socket/Stream.clayer.yml
-        - Socket-Layer: ../layer/Socket/WiFi/Socket.clayer.yml
-        - Board-Layer:  ../layer/Board/B-U585I-IOT02A/Board.clayer.yml
-    - type: HW_VCom
-      board: STMicroelectronics::B-U585I-IOT02A
-      device: STMicroelectronics::STM32U585AIIx
+    - type: VCom_Debug
+      debug: on
+      optimize: none
+      define:
+        - RECORDER_ENABLED
+        - DEBUG
+      variables:
+        - Stream-Layer: ../layer/Stream/VCom/Stream.clayer.yml
+    - type: VCom_Release
+      debug: off
+      optimize: balanced
       define:
         - RECORDER_ENABLED
       variables:
         - Stream-Layer: ../layer/Stream/VCom/Stream.clayer.yml
+
+  target-types:
+    - type: HW
+      board: STMicroelectronics::B-U585I-IOT02A
+      device: STMicroelectronics::STM32U585AIIx
+      variables:
+        - Socket-Layer: ../layer/Socket/WiFi/Socket.clayer.yml
         - Board-Layer:  ../layer/Board/B-U585I-IOT02A/Board.clayer.yml
     - type: AVH
       device: ARM::SSE-300-MPS3
       variables:
-        - Stream-Layer: ../layer/Stream/Socket/Stream.clayer.yml
         - Socket-Layer: ../layer/Socket/VSocket/Socket.clayer.yml
         - Board-Layer:  ../layer/Board/AVH_MPS3_Corstone-300/Board.clayer.yml
 

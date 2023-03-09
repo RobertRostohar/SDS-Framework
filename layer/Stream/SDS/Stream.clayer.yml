@@ -1,0 +1,17 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/Open-CMSIS-Pack/devtools/schemas/projmgr/1.5.0/tools/projmgr/schemas/clayer.schema.json
+
+layer:
+  type: Stream
+  # variant: SDS
+  description: Synchronous Data Stream (SDS)
+
+  connections:
+    - connect: Stream
+      provides:
+        - Stream_SDS
+
+  groups:
+    - group: Stream
+      files:
+        - file: ../../../sds/include/sds.h
+        - file: ../../../sds/source/sds.c
